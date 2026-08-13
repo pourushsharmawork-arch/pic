@@ -46,7 +46,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from mesh_forward import build_mesh, build_mesh_lossy, N_MODES, power_obs_dim
+from mesh_forward import build_mesh, build_mesh_lossy, N_MODES, power_obs_dim, power_row_width
 from train_tandem import U_to_measurement, measurement_to_U, angles_to_sincos
 
 N_PARAMS = 16   # 6 theta + 6 phi + 4 delta
@@ -202,49 +202,68 @@ def regime_train_val_split(data: dict, val_frac: float = 0.1, seed: int = 0):
     return train, val
 
 
+def _read_npz_probe_meta(path: str) -> dict:
+    """Optional metadata written by datagen.py (may be absent on old files)."""
+    if not path.endswith(".npz"):
+        return {}
+    d = np.load(path)
+    meta = {}
+    for key in ("basis_only", "quadrature", "observation", "loss"):
+        if key in d.files:
+            v = d[key]
+            meta[key] = bool(v.item()) if v.shape == () else v
+    return meta
+
+
 def load_real_power_dataset(path: str, orientation: str = "auto",
-                             quadrature: bool = False) -> dict:
+                             quadrature: bool = False,
+                             basis_only: bool = False) -> dict:
     """
     Power-mode rows: [theta(6), phi(6), delta(4), powers].
 
-    Without quadrature: 48 columns, powers(32) = 8 probes × 4 ports
-    (I1..I4, I12,I23,I34,I14).
+    Row widths (auto-detected when orientation='auto'):
+      32 → basis_only (4 probes × 4 ports = 16 powers)
+      48 → 8-probe superposition (same width as exact-field — pass --observation!)
+      64 → quadrature (12 probes × 4 ports = 48 powers)
 
-    With quadrature: 64 columns, powers(48) = 12 probes × 4 ports
-    (adds I12q,I23q,I34q,I14q = (e_i + i e_j)/√2).
+    NPZ metadata keys (from datagen.py) override flags when present.
 
-    If orientation='auto' and neither 48 nor 64 matches, pass quadrature
-    explicitly. When auto-detecting, a file with 64 columns implies
-    quadrature=True.
-
-    Returns {"theta","phi","delta","obs","quadrature"}.
+    Returns {"theta","phi","delta","obs","quadrature","basis_only"}.
     """
+    meta = _read_npz_probe_meta(path)
+    if "basis_only" in meta:
+        basis_only = bool(meta["basis_only"])
+    if "quadrature" in meta:
+        quadrature = bool(meta["quadrature"])
+
     arr = _load_array(path)
     arr = np.asarray(arr, dtype=np.float64)
-    obs_dim = power_obs_dim(quadrature)
+    obs_dim = power_obs_dim(quadrature, basis_only)
     row_width = N_PARAMS + obs_dim
 
     if orientation == "auto":
         if arr.ndim != 2:
             raise ValueError(f"Expected a 2D array, got shape {arr.shape}")
-        candidates = [
-            (N_PARAMS + power_obs_dim(False), False),
-            (N_PARAMS + power_obs_dim(True), True),
-        ]
-        if arr.shape[0] in {w for w, _ in candidates}:
-            orientation = "rows"
-            row_width = arr.shape[0]
-            quadrature = row_width == N_PARAMS + power_obs_dim(True)
-            obs_dim = power_obs_dim(quadrature)
-        elif arr.shape[1] in {w for w, _ in candidates}:
-            orientation = "cols"
-            row_width = arr.shape[1]
-            quadrature = row_width == N_PARAMS + power_obs_dim(True)
-            obs_dim = power_obs_dim(quadrature)
+        width_map = {
+            N_PARAMS + power_obs_dim(False, True): (True, False),
+            N_PARAMS + power_obs_dim(False, False): (False, False),
+            N_PARAMS + power_obs_dim(True, False): (False, True),
+        }
+        for dim in (0, 1):
+            w = arr.shape[dim]
+            if w in width_map:
+                if dim == 0:
+                    orientation = "rows"
+                else:
+                    orientation = "cols"
+                basis_only, quadrature = width_map[w]
+                obs_dim = power_obs_dim(quadrature, basis_only)
+                row_width = N_PARAMS + obs_dim
+                break
         else:
             raise ValueError(
-                f"Neither dim of shape {arr.shape} is 48 (8 probes) or 64 "
-                f"(12 probes with quadrature). Pass orientation/quadrature explicitly."
+                f"Shape {arr.shape} is not a recognized power row width "
+                f"(32=basis-only, 48=8-probe, 64=quadrature). Pass flags explicitly."
             )
     if orientation == "rows":
         arr = arr.T
@@ -252,7 +271,7 @@ def load_real_power_dataset(path: str, orientation: str = "auto",
     row_width = N_PARAMS + obs_dim
     if arr.shape[1] != row_width:
         raise ValueError(
-            f"After orientation fix, expected (N,{row_width}) for "
+            f"Expected (N,{row_width}) for basis_only={basis_only} "
             f"quadrature={quadrature}, got {arr.shape}"
         )
 
@@ -263,11 +282,13 @@ def load_real_power_dataset(path: str, orientation: str = "auto",
 
     if (power < -1e-4).any():
         raise ValueError(
-            "Some 'power' values are negative -- this file looks like it still "
-            "has amplitude or complex [Re,Im] data, not power (|field|^2)."
+            "Some 'power' values are negative — not a power dataset."
         )
 
-    return {"theta": theta, "phi": phi, "delta": delta, "obs": power, "quadrature": quadrature}
+    return {
+        "theta": theta, "phi": phi, "delta": delta, "obs": power,
+        "quadrature": quadrature, "basis_only": basis_only,
+    }
 
 
 def real_data_to_regime_dict(raw: dict) -> dict:

@@ -250,32 +250,46 @@ _PROBE_LABELS_BASE = ["I1", "I2", "I3", "I4", "I12", "I23", "I34", "I14"]
 _PROBE_LABELS_QUAD = ["I12q", "I23q", "I34q", "I14q"]
 
 
-def make_power_probes(quadrature: bool = False) -> torch.Tensor:
+def make_power_probes(quadrature: bool = False, basis_only: bool = False) -> torch.Tensor:
     """Unit-norm row probes for power-mode observation.
 
-    quadrature=False (default): 8 probes, 32-D power vector.
-    quadrature=True: adds (e_i + i e_j)/√2 for the same four adjacent pairs,
-    giving Im(U[a,j]*conj(U[b,j])) and resolving the cos(Δφ) sign ambiguity
-    that real superpositions leave. 12 probes, 48-D power vector.
+    basis_only=True:  I1..I4 only → 4 probes, 16-D power vector.
+                      Relative phases between matrix entries are largely
+                      invisible; many (θ, φ) directions have zero obs gradient.
+
+    basis_only=False (default):
+      quadrature=False: 8 probes (basis + real superpositions), 32-D obs.
+      quadrature=True:  12 probes (+ quadrature superpositions), 48-D obs.
     """
+    if basis_only:
+        if quadrature:
+            raise ValueError("basis_only and quadrature are incompatible")
+        return PROBE_BASIS.clone()
     parts = [PROBE_BASIS, PROBE_SUPERPOSITION]
     if quadrature:
         parts.append(PROBE_QUADRATURE)
     return torch.cat(parts, dim=0)
 
 
-def power_obs_dim(quadrature: bool = False) -> int:
-    return make_power_probes(quadrature).shape[0] * N_MODES
+def power_obs_dim(quadrature: bool = False, basis_only: bool = False) -> int:
+    return make_power_probes(quadrature, basis_only).shape[0] * N_MODES
 
 
-def probe_labels(quadrature: bool = False) -> list[str]:
+def probe_labels(quadrature: bool = False, basis_only: bool = False) -> list[str]:
+    if basis_only:
+        return ["I1", "I2", "I3", "I4"]
     labels = list(_PROBE_LABELS_BASE)
     if quadrature:
         labels.extend(_PROBE_LABELS_QUAD)
     return labels
 
 
-DEFAULT_PROBES = make_power_probes(quadrature=False)  # (8,4)
+def power_row_width(quadrature: bool = False, basis_only: bool = False) -> int:
+    """16 params + obs_dim for power-mode NPZ rows."""
+    return 16 + power_obs_dim(quadrature, basis_only)
+
+
+DEFAULT_PROBES = make_power_probes(quadrature=False, basis_only=False)  # (8,4)
 
 
 def apply_probes(U: torch.Tensor, probes: torch.Tensor) -> torch.Tensor:

@@ -4,7 +4,8 @@ Inference + lightweight interpretability for PARAMS inverse mesh models.
 Supports all regime.py settings:
   --observation exact | power
   --eta           known loss (1.0 = lossless)
-  --quadrature    power mode: 12 probes instead of 8 (obs dim 48)
+  --quadrature    power mode: 12 probes (obs dim 48)
+  --basis_only    power mode: I1..I4 only (obs dim 16)
 
 Given one observation vector, this script:
   1) loads a checkpoint (InverseNet weights)
@@ -68,6 +69,9 @@ def _load_row(data_path: str, index: int, npz_key: str | None,
     # normalize to (N, width)
     if arr.shape[0] in (48, 64) and arr.shape[1] not in (48, 64):
         arr = arr.T
+    if arr.shape[1] != row_width and not (arr.shape[0] == row_width and arr.shape[1] != row_width):
+        if arr.shape[0] in (32, 48, 64) and arr.shape[1] not in (32, 48, 64):
+            arr = arr.T
     if arr.shape[1] != row_width:
         raise ValueError(
             f"Expected dataset width {row_width} for observation={regime.observation} "
@@ -119,7 +123,7 @@ def _interpretability_report(model, obs: torch.Tensor, regime: Regime, topk: int
             print(f"    obs[{j:2d}]  ({part} mode {mode}, probe e{probe})  score={feat_imp[j]:.4e}")
     else:
         n_probes = regime.probes.shape[0]
-        labels = probe_labels(regime.quadrature)
+        labels = probe_labels(regime.quadrature, regime.basis_only)
         probe_imp = np.array([feat_imp[i * 4:(i + 1) * 4].sum() for i in range(n_probes)])
         probe_imp = probe_imp / (probe_imp.sum() + 1e-12)
         print("  probe contribution (normalized):")
@@ -144,6 +148,8 @@ def main():
                    help="comma-separated observation (overrides --data)")
     p.add_argument("--observation", type=str, default="exact", choices=["exact", "power"])
     p.add_argument("--eta", type=float, default=1.0)
+    p.add_argument("--basis_only", action="store_true",
+                   help="power mode: I1..I4 only (obs dim 16)")
     p.add_argument("--quadrature", action="store_true",
                    help="power mode: 12 probes, 48-D observation")
     p.add_argument("--device", type=str, default=DEVICE, choices=["cpu", "cuda"])
@@ -155,19 +161,31 @@ def main():
 
     if args.features is None and args.data is None:
         raise ValueError("Provide either --features or --data")
+    if args.basis_only and args.quadrature:
+        p.error("--basis_only and --quadrature are incompatible")
+    if args.basis_only and args.observation != "power":
+        p.error("--basis_only applies only to --observation power")
     if args.quadrature and args.observation != "power":
         p.error("--quadrature applies only to --observation power")
 
-    regime = Regime(observation=args.observation, eta=args.eta, quadrature=args.quadrature)
+    regime = Regime(
+        observation=args.observation, eta=args.eta,
+        quadrature=args.quadrature, basis_only=args.basis_only,
+    )
 
     if args.features is not None:
         obs_np = _parse_features(args.features, regime.obs_dim)
         true_params = None
     else:
         if args.observation == "power" and args.data is not None:
-            raw = dp.load_real_power_dataset(args.data, quadrature=args.quadrature)
-            if raw["quadrature"] != args.quadrature:
-                regime = Regime(observation="power", eta=args.eta, quadrature=raw["quadrature"])
+            raw = dp.load_real_power_dataset(
+                args.data, quadrature=args.quadrature, basis_only=args.basis_only,
+            )
+            if raw["quadrature"] != args.quadrature or raw["basis_only"] != args.basis_only:
+                regime = Regime(
+                    observation="power", eta=args.eta,
+                    quadrature=raw["quadrature"], basis_only=raw["basis_only"],
+                )
             row = dp._load_array(args.data, npz_key=args.npz_key)
             if row.shape[0] in (48, 64):
                 row = row.T
@@ -236,7 +254,7 @@ def main():
 
     print("[inference]")
     print(f"  regime                  : observation={regime.observation}  eta={regime.eta}  "
-          f"quadrature={regime.quadrature}  obs_dim={regime.obs_dim}")
+          f"basis_only={regime.basis_only}  quadrature={regime.quadrature}  obs_dim={regime.obs_dim}")
     print(f"  device                  : {args.device}")
     if regime.observation == "exact":
         print(f"  network matrix fidelity : {fid0:.6f}")

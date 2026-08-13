@@ -18,6 +18,9 @@ in `Regime` below:
      separate lossless code path either)
   4. optional quadrature probes in power mode (Regime.quadrature=True adds
      (e_i + i e_j)/√2 probes, 48-D obs instead of 32)
+  5. optional basis_only in power mode (I1..I4 powers only, 16-D obs) —
+     use identifiability.py to quantify which parameter directions are
+     unobservable vs gauge-only
 
 This does NOT require a different model architecture. InverseNet's in_dim/
 out_dim were already parameters; here they're just set from the regime
@@ -35,7 +38,7 @@ from dataclasses import dataclass
 import torch
 
 from mesh_forward import (
-    build_mesh_lossy, make_power_probes, power_obs_dim, probe_powers, N_MODES,
+    BLOCK_LABELS, build_mesh_lossy, make_power_probes, power_obs_dim, probe_powers, N_MODES,
 )
 from train_tandem import (
     U_to_measurement, angles_to_sincos, sincos_to_angles,
@@ -70,12 +73,17 @@ def sincos_to_angles_tp(sc: torch.Tensor):
 class Regime:
     observation: str = "exact"      # "exact" | "power"
     eta: float | torch.Tensor = 1.0  # known loss level(s); 1.0 = lossless
+    basis_only: bool = False         # power only: I1..I4 powers, no superpositions
     quadrature: bool = False         # power only: add (e_i + i e_j)/√2 probes
-    probes: torch.Tensor | None = None  # override probe set; default from quadrature
+    probes: torch.Tensor | None = None  # override probe set; default from flags
     predict_delta: bool = None       # default: True for "exact", False for "power"
 
     def __post_init__(self):
         assert self.observation in ("exact", "power")
+        if self.basis_only and self.observation != "power":
+            raise ValueError("basis_only applies only to observation='power'")
+        if self.basis_only and self.quadrature:
+            raise ValueError("basis_only and quadrature are incompatible")
         if self.predict_delta is None:
             self.predict_delta = (self.observation == "exact")
         if self.observation == "power" and self.predict_delta:
@@ -88,9 +96,20 @@ class Regime:
             )
         if self.observation == "power":
             if self.probes is None:
-                self.probes = make_power_probes(self.quadrature)
+                self.probes = make_power_probes(self.quadrature, self.basis_only)
         else:
             self.probes = None
+
+    @property
+    def probe_config(self) -> str:
+        """Short label for logging / identifiability tables."""
+        if self.observation == "exact":
+            return "exact_basis"
+        if self.basis_only:
+            return "power_basis_only"
+        if self.quadrature:
+            return "power_superposition_quadrature"
+        return "power_superposition"
 
     @property
     def n_angles(self) -> int:

@@ -1,17 +1,14 @@
 """Generate (params, observation) datasets for the PARAMS regimes.
 
-    observation ∈ {exact, power}  ×  loss (eta) ∈ {1.0 lossless, <1 lossy}
-    power mode optionally adds quadrature superposition probes (--quadrature)
-
 Row width = 16 params + obs_dim:
-  exact              -> 16 + 32 = 48
-  power              -> 16 + 32 = 48   (8 probes × 4 ports)
-  power + quadrature -> 16 + 48 = 64   (12 probes × 4 ports)
+  exact                      -> 48  (16 + 32 Re/Im)
+  power + basis_only           -> 32  (16 + 16 powers, I1..I4 only)
+  power + superposition        -> 48  (16 + 32 powers)
+  power + superposition + quad -> 64  (16 + 48 powers)
 
 Usage:
-    python datagen.py --observation exact --loss 1.0  --out data/exact_lossless.npz
+    python datagen.py --observation power --basis_only --loss 1.0 --out data/power_basis_lossless.npz
     python datagen.py --observation power --loss 0.85 --out data/power_lossy.npz
-    python datagen.py --observation power --loss 1.0 --quadrature --out data/power_quad_lossless.npz
 """
 from __future__ import annotations
 
@@ -42,8 +39,7 @@ def lossy_U4_circuit(U, losses):
     if η.shape != (6, 4):
         raise ValueError(f"Shape of losses is {η.shape} not (6, 4)")
 
-    θlist = []
-    ϕlist = []
+    θlist, ϕlist = [], []
     for mzi in blocks:
         θlist.append(mzi["theta"])
         ϕlist.append(mzi["phi"])
@@ -66,17 +62,12 @@ def lossy_U4_circuit(U, losses):
         lossy_U2mzi(θ=θlist[4], α=-ϕlist[4], β=np.pi / 2, χ=0, ηlist=η[4]),
         lossy_U2mzi(θ=θlist[5], α=-ϕlist[5], β=np.pi / 2, χ=0, ηlist=η[5]),
     )
-
     return L1 @ L2 @ L3 @ L4 @ D, θlist, ϕlist, np.angle(np.diag(D))
 
 
 def project_to_su4(U):
     phase = np.angle(np.linalg.det(U)) / 4
     return U * np.exp(-1j * phase)
-
-
-def _basis_probes_numpy():
-    return np.eye(4, dtype=complex)  # rows I1..I4; (probes @ U) picks rows of U
 
 
 def _pack_exact(fields):
@@ -94,23 +85,26 @@ def sample_programmed_unitary_statistics(
     seed=1234,
     observation="exact",
     quadrature=False,
+    basis_only=False,
 ):
     if observation not in ("exact", "power"):
         raise ValueError(f"observation must be 'exact' or 'power', got {observation!r}")
-    if observation == "exact" and quadrature:
-        raise ValueError("quadrature probes apply only to observation='power'")
-    obs_dim = 32 if observation == "exact" else power_obs_dim(quadrature)
+    if observation == "exact" and (quadrature or basis_only):
+        raise ValueError("quadrature / basis_only apply only to observation='power'")
+    if basis_only and quadrature:
+        raise ValueError("basis_only and quadrature are incompatible")
+    obs_dim = 32 if observation == "exact" else power_obs_dim(quadrature, basis_only)
     print(
-        f"generating {n_samples} samples  observation={observation}  "
-        f"loss={loss}  quadrature={quadrature}  obs_dim={obs_dim}"
+        f"generating {n_samples} samples  observation={observation}  loss={loss}  "
+        f"basis_only={basis_only}  quadrature={quadrature}  obs_dim={obs_dim}"
     )
     rng = np.random.default_rng(seed)
     all_rows = []
     losses = np.full((6, 4), loss, dtype=float)
     if observation == "exact":
-        probes = _basis_probes_numpy()
+        probes = np.eye(4, dtype=complex)
     else:
-        probes = make_power_probes(quadrature).numpy()
+        probes = make_power_probes(quadrature, basis_only).numpy()
 
     for _ in range(n_samples):
         U = qf.misc.random_unitary(4, seed=int(rng.integers(10**9)))
@@ -121,16 +115,8 @@ def sample_programmed_unitary_statistics(
             np.asarray(phi_list).reshape(-1),
             np.asarray(D_list).reshape(-1),
         ])
-        if parameters.size != 16:
-            raise ValueError(
-                f"Expected 16 decomposition parameters, but received {parameters.size}."
-            )
-
-        fields = (probes @ U_circuit)
-        if observation == "exact":
-            y = _pack_exact([fields[i] for i in range(fields.shape[0])])
-        else:
-            y = _pack_power([fields[i] for i in range(fields.shape[0])])
+        fields = probes @ U_circuit
+        y = _pack_exact([fields[i] for i in range(fields.shape[0])]) if observation == "exact" else _pack_power([fields[i] for i in range(fields.shape[0])])
         all_rows.append(np.concatenate([parameters, y]))
     return np.vstack(all_rows)
 
@@ -138,12 +124,11 @@ def sample_programmed_unitary_statistics(
 def main():
     p = argparse.ArgumentParser(description="Generate PARAMS training data.")
     p.add_argument("--observation", choices=["exact", "power"], default="exact")
-    p.add_argument(
-        "--quadrature", action="store_true",
-        help="power mode only: add (e_i + i e_j)/√2 probes (48-D obs, 64-col rows)",
-    )
-    p.add_argument("--loss", type=float, default=1.0,
-                   help="per-port amplitude efficiency (1.0 = lossless). Must match --eta at train time.")
+    p.add_argument("--basis_only", action="store_true",
+                   help="power mode: I1..I4 powers only (16-D obs, 32-col rows)")
+    p.add_argument("--quadrature", action="store_true",
+                   help="power mode: add quadrature superposition probes (48-D obs)")
+    p.add_argument("--loss", type=float, default=1.0)
     p.add_argument("--n_samples", type=int, default=10_000)
     p.add_argument("--seed", type=int, default=1234)
     p.add_argument("--out", type=str, default="data/data.npz")
@@ -153,26 +138,27 @@ def main():
         p.error("--loss must be in (0, 1]")
     if args.quadrature and args.observation != "power":
         p.error("--quadrature applies only to --observation power")
+    if args.basis_only and args.observation != "power":
+        p.error("--basis_only applies only to --observation power")
+    if args.basis_only and args.quadrature:
+        p.error("--basis_only and --quadrature are incompatible")
 
     Big_Matrix = np.array(
         sample_programmed_unitary_statistics(
-            loss=args.loss,
-            n_samples=args.n_samples,
-            seed=args.seed,
-            observation=args.observation,
-            quadrature=args.quadrature,
+            loss=args.loss, n_samples=args.n_samples, seed=args.seed,
+            observation=args.observation, quadrature=args.quadrature,
+            basis_only=args.basis_only,
         ),
         dtype=float,
     )
     np.savez_compressed(
-        args.out,
-        my_matrix=Big_Matrix,
+        args.out, my_matrix=Big_Matrix,
         observation=np.array(args.observation),
         loss=np.array(args.loss),
+        basis_only=np.array(args.basis_only),
         quadrature=np.array(args.quadrature),
     )
-    print(f"saved {Big_Matrix.shape} -> {args.out}  "
-          f"(observation={args.observation}, loss={args.loss}, quadrature={args.quadrature})")
+    print(f"saved {Big_Matrix.shape} -> {args.out}")
 
 
 if __name__ == "__main__":

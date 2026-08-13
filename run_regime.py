@@ -38,6 +38,8 @@ def main():
     p.add_argument("--observation", type=str, default="exact", choices=["exact", "power"])
     p.add_argument("--quadrature", action="store_true",
                    help="power mode: use 12 probes incl. (e_i + i e_j)/√2 (obs dim 48)")
+    p.add_argument("--basis_only", action="store_true",
+                   help="power mode: I1..I4 powers only (obs dim 16, 32-col rows)")
     p.add_argument("--epochs", type=int, default=60)
     p.add_argument("--mode", type=str, default="physics", choices=["physics", "param_only"])
     p.add_argument("--n_refine_eval", type=int, default=200)
@@ -46,22 +48,38 @@ def main():
     p.add_argument("--out", type=str, default="inverse_net.pt")
     args = p.parse_args()
 
-    regime = Regime(observation=args.observation, eta=args.eta, quadrature=args.quadrature)
+    if args.basis_only and args.quadrature:
+        p.error("--basis_only and --quadrature are incompatible")
+    if args.basis_only and args.observation != "power":
+        p.error("--basis_only applies only to --observation power")
+
+    regime = Regime(
+        observation=args.observation, eta=args.eta,
+        quadrature=args.quadrature, basis_only=args.basis_only,
+    )
 
     # ---- 1. load ---- #
     if args.data is None:
         print(f"[data] no --data given, generating {args.n_synthetic} synthetic "
               f"samples (observation={args.observation}, eta={args.eta}, "
-              f"quadrature={args.quadrature})")
+              f"quadrature={args.quadrature}, basis_only={args.basis_only})")
         data = dp.synthetic_regime_dataset(args.n_synthetic, regime, seed=0)
         raw = data
     elif args.observation == "power":
         print(f"[data] loading {args.data}")
-        raw = dp.load_real_power_dataset(args.data, quadrature=args.quadrature)
-        if raw["quadrature"] != args.quadrature:
-            print(f"[data] WARNING: file implies quadrature={raw['quadrature']} but "
-                  f"--quadrature={args.quadrature}; using file's {raw['quadrature']}")
-            regime = Regime(observation="power", eta=args.eta, quadrature=raw["quadrature"])
+        raw = dp.load_real_power_dataset(
+            args.data, quadrature=args.quadrature, basis_only=args.basis_only,
+        )
+        file_quad = raw["quadrature"]
+        file_basis = raw["basis_only"]
+        if file_quad != args.quadrature or file_basis != args.basis_only:
+            print(f"[data] WARNING: file implies basis_only={file_basis} quadrature={file_quad} "
+                  f"but flags were basis_only={args.basis_only} quadrature={args.quadrature}; "
+                  f"using file metadata")
+            regime = Regime(
+                observation="power", eta=args.eta,
+                quadrature=file_quad, basis_only=file_basis,
+            )
         n_probes = regime.probes.shape[0]
         print(f"[data] {raw['obs'].shape[0]} samples (power: {n_probes} probes × 4 ports, "
               f"obs_dim={regime.obs_dim})")
@@ -93,8 +111,8 @@ def main():
                   "Continuing anyway. ***\n")
     train_d, val_d = dp.regime_train_val_split(data, val_frac=0.1)
     print(f"[data] train={train_d['obs'].shape[0]}  val={val_d['obs'].shape[0]}  "
-          f"regime={args.observation}  eta={args.eta}  quadrature={regime.quadrature}  "
-          f"obs_dim={regime.obs_dim}  device={DEVICE}")
+          f"regime={args.observation}  eta={args.eta}  basis_only={regime.basis_only}  "
+          f"quadrature={regime.quadrature}  obs_dim={regime.obs_dim}  device={DEVICE}")
 
     # ---- 4. train ---- #
     model, history = train_model_regime(
