@@ -1,0 +1,7 @@
+__pycache__/
+data/
+models/
+*.ipynb
+*.pt
+models/
+
