@@ -1,0 +1,32 @@
+[inference]
+  regime                  : observation=exact  eta=1.0  basis_only=False  quadrature=False  obs_dim=32
+  device                  : cpu
+  network matrix fidelity : 0.617066
+  network frob error      : 1.313811
+  network obs fidelity    : 0.615028
+  refined matrix fidelity : 0.999998
+  refined frob error      : 0.002488
+  refined obs fidelity    : 0.999998
+   theta: [-0.505242  2.138368  1.858949 -1.061274  2.545913  1.126693]
+     phi: [-3.627791  1.944021 -1.965025  1.663663 -0.514844  3.855753]
+   delta: [ 0.399057 -1.831863 -1.712399  3.145062]
+
+[vs dataset labels — diagnostic only; high obs fidelity matters more]
+  circular RMSE (network) : 2.031548
+  circular RMSE (refined) : 2.235290
+
+[interpretability] local sensitivity at this sample
+  basis-probe contribution (normalized):
+    probe e0: 0.287
+    probe e1: 0.212
+    probe e2: 0.290
+    probe e3: 0.211
+  top-8 sensitive feature indices:
+    obs[21]  (Im mode 1, probe e2)  score=5.6481e-01
+    obs[20]  (Im mode 0, probe e2)  score=4.2486e-01
+    obs[ 6]  (Im mode 2, probe e0)  score=4.1881e-01
+    obs[17]  (Re mode 1, probe e2)  score=4.0028e-01
+    obs[ 4]  (Im mode 0, probe e0)  score=3.9635e-01
+    obs[16]  (Re mode 0, probe e2)  score=3.5338e-01
+    obs[ 0]  (Re mode 0, probe e0)  score=3.5160e-01
+    obs[30]  (Im mode 2, probe e3)  score=3.4086e-01

@@ -1,0 +1,72 @@
+[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossless.npz
+[data] 5000 samples (exact-field mode)
+
+[convention check] verifying assumed mesh convention against 5 real rows...
+
+=== sample 0 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.294788  confirmed                   reverse_apply   row_reblock
+    0.818097  differential_phi_signflip   forward         col_reblock
+    0.922156  differential_phi_signflip   reverse_apply   col_interleaved
+    0.971267  single_port                 reverse_apply   full_matrix_reblock
+    0.988571  differential_phi_signflip   forward         row_interleaved
+
+=== sample 1 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.832608  confirmed                   reverse_apply   col_reblock
+    0.841416  confirmed                   reverse_apply   row_reblock
+    0.856910  confirmed                   reverse_apply   col_interleaved
+    0.908902  differential_phi_signflip   forward         col_interleaved
+    0.912200  differential_phi_signflip   reverse_apply   row_reblock
+
+=== sample 2 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.682160  differential_transpose      reverse_apply   full_matrix_reblock
+    0.907505  differential_transpose      forward         col_reblock
+    0.907505  differential_transpose      forward         full_matrix_reblock
+    0.911461  confirmed                   forward         full_matrix_reblock
+    0.942634  single_port                 forward         col_interleaved
+
+=== sample 3 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.781160  confirmed                   reverse_apply   row_reblock
+    0.921794  confirmed                   forward         full_matrix_reblock
+    0.978410  differential_phi_signflip   reverse_apply   row_reblock
+    0.981743  confirmed                   forward         row_interleaved
+    0.988966  single_port                 reverse_apply   row_interleaved
+
+=== sample 4 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.772509  differential_transpose      reverse_apply   row_interleaved
+    0.916336  differential                reverse_apply   full_matrix_reblock
+    0.924716  single_port                 reverse_apply   col_interleaved
+    0.946247  differential_transpose      reverse_apply   col_reblock
+    0.960441  confirmed                   forward         full_matrix_reblock
+
+=== summary ===
+('confirmed', 'forward', 'row_reblock'): matched 5/5 samples
+
+-> Consistent match across all 5 samples: ('confirmed', 'forward', 'row_reblock')
+[data] train=4500  val=500  regime=exact  eta=1.0  basis_only=False  quadrature=False  obs_dim=32  device=cpu
+[exact/eta=1.0] epoch   0  train_loss=7.7354  val_obs_mse=0.21810  *best*
+[exact/eta=1.0] epoch  10  train_loss=2.6943  val_obs_mse=0.08766  *best*
+[exact/eta=1.0] epoch  20  train_loss=1.5862  val_obs_mse=0.07319  *best*
+[exact/eta=1.0] epoch  30  train_loss=0.9907  val_obs_mse=0.07299
+[exact/eta=1.0] epoch  40  train_loss=0.6238  val_obs_mse=0.07651
+[exact/eta=1.0] epoch  50  train_loss=0.4348  val_obs_mse=0.08550
+[exact/eta=1.0] epoch  59  train_loss=0.4099  val_obs_mse=0.08808
+restored best checkpoint (val_obs_mse=0.07133)
+
+[train] best val_obs_mse: 0.07133
+
+[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):
+  network only          : 0.52589  (min 0.01898)
+  + single-start refine  : 0.98839  (min 0.82047)
+  + 200-start refine   : 0.99948  (min 0.98766)
+
+[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossless.pt

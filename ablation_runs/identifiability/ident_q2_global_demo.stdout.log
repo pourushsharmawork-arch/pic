@@ -1,0 +1,8 @@
+
+Global non-uniqueness demo: power_superposition  obs_dim=32
+(two cold-start gradient solves from different random initial angles)
+
+  pair 0: obs_RMSE=(2.81e-03, 3.43e-01)  mean|Δθ|=2.717  mean|circular Δφ|=1.805
+  pair 1: obs_RMSE=(2.13e-02, 1.41e-02)  mean|Δθ|=1.573  mean|circular Δφ|=1.374
+  pair 2: obs_RMSE=(9.89e-03, 2.13e-02)  mean|Δθ|=2.056  mean|circular Δφ|=1.359
+  → Large param spread at equal obs fidelity = gauge / branch non-uniqueness (Q2)

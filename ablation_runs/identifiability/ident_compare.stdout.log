@@ -1,0 +1,11 @@
+
+Identifiability comparison (eta=1.0, generic random point, seed=0)
+config                            obs params   rank   null  interpretation
+------------------------------------------------------------------------------------------
+exact_basis                        32     16     16      0  full local rank on U(4) (16 params)
+power_basis_only                   16     12      9      3  many φ (and some θ) directions invisible — Q1
+power_superposition                32     12     12      0  local rank 12; global gauge via --global-demo — Q2
+power_superposition_quadrature     48     12     12      0  residual null = mesh gauge only — Q2
+
+Run `python identifiability.py --observation power --basis_only` for null-vector detail.
+High observation fidelity from the net does NOT mean params are unique — check null dim.

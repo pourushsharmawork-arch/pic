@@ -1,0 +1,163 @@
+Self-test on synthetic exact-field data (confirmed convention).
+Expect the top match to be ('confirmed', 'forward', 'row_reblock') with max|err| ~ 0.
+
+
+=== sample 0 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.815567  differential_transpose      reverse_apply   row_reblock
+    0.890619  confirmed                   reverse_apply   col_interleaved
+    0.894246  differential_phi_signflip   reverse_apply   row_interleaved
+    0.910217  confirmed                   forward         full_matrix_reblock
+    0.929960  differential                reverse_apply   row_reblock
+
+=== sample 1 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.824258  confirmed                   forward         row_interleaved
+    0.851753  single_port                 reverse_apply   row_reblock
+    0.863721  confirmed                   reverse_apply   row_interleaved
+    0.866634  confirmed                   reverse_apply   col_interleaved
+    0.876253  differential                reverse_apply   row_interleaved
+
+=== sample 2 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.865667  confirmed                   forward         row_interleaved
+    0.906374  differential_phi_signflip   reverse_apply   row_reblock
+    0.916758  differential_phi_signflip   reverse_apply   col_interleaved
+    0.943768  differential_phi_signflip   forward         row_interleaved
+    0.962633  differential                reverse_apply   row_reblock
+
+=== sample 3 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.854704  differential_phi_signflip   reverse_apply   row_interleaved
+    0.907463  differential_phi_signflip   forward         col_interleaved
+    0.921957  confirmed                   reverse_apply   row_interleaved
+    1.011611  differential                reverse_apply   row_interleaved
+    1.011611  differential_transpose      reverse_apply   col_interleaved
+
+=== sample 4 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.789831  differential_phi_signflip   reverse_apply   col_reblock
+    0.853768  differential_phi_signflip   reverse_apply   row_reblock
+    0.887409  confirmed                   reverse_apply   row_reblock
+    0.941259  differential_phi_signflip   forward         row_interleaved
+    1.024624  differential_phi_signflip   reverse_apply   full_matrix_reblock
+
+=== summary ===
+('confirmed', 'forward', 'row_reblock'): matched 5/5 samples
+
+-> Consistent match across all 5 samples: ('confirmed', 'forward', 'row_reblock')
+
+========================================================================
+Self-test on synthetic power data (eta=0.85).
+Expect the top match to be ('confirmed', 'forward') with max|err| ~ 0.
+
+
+=== sample 0 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.025236  single_port                 forward
+    0.025493  differential_transpose      forward
+    0.076531  differential_phi_signflip   forward
+    0.076532  differential                forward
+    0.158909  confirmed                   reverse_apply
+
+=== sample 1 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.042628  differential_transpose      reverse_apply
+    0.081362  differential_transpose      forward
+    0.086062  single_port                 forward
+    0.087771  differential                forward
+    0.087771  differential_phi_signflip   forward
+
+=== sample 2 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.051789  single_port                 forward
+    0.058741  differential_transpose      forward
+    0.072487  differential                forward
+    0.072487  differential_phi_signflip   forward
+    0.118508  confirmed                   reverse_apply
+
+=== sample 3 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.063787  differential_transpose      forward
+    0.070258  differential                reverse_apply
+    0.070258  differential_phi_signflip   reverse_apply
+    0.084379  confirmed                   reverse_apply
+    0.109260  differential_transpose      reverse_apply
+
+=== sample 4 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.055470  differential                forward
+    0.055470  differential_phi_signflip   forward
+    0.061415  single_port                 forward
+    0.078779  differential_transpose      forward
+    0.095483  differential_phi_signflip   reverse_apply
+
+=== summary ===
+('confirmed', 'forward'): matched 5/5 samples
+
+-> Consistent match across all 5 samples: ('confirmed', 'forward')
+
+========================================================================
+Self-test on synthetic power data (eta=0.85, quadrature=True).
+Expect the top match to be ('confirmed', 'forward') with max|err| ~ 0.
+
+
+=== sample 0 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.111522  differential_phi_signflip   forward
+    0.111522  differential_transpose      forward
+    0.121868  differential                forward
+    0.133917  confirmed                   reverse_apply
+    0.150358  single_port                 reverse_apply
+
+=== sample 1 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.065999  differential                reverse_apply
+    0.069486  confirmed                   reverse_apply
+    0.105392  single_port                 reverse_apply
+    0.105823  differential_transpose      forward
+    0.109825  differential                forward
+
+=== sample 2 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.051972  differential_transpose      forward
+    0.091043  single_port                 forward
+    0.110846  differential                forward
+    0.110846  differential_phi_signflip   forward
+    0.233562  confirmed                   reverse_apply
+
+=== sample 3 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.034859  single_port                 forward
+    0.041355  differential_transpose      forward
+    0.041355  differential_phi_signflip   forward
+    0.048279  differential                forward
+    0.164705  differential_phi_signflip   reverse_apply
+
+=== sample 4 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.096036  differential_transpose      forward
+    0.136465  single_port                 forward
+    0.147066  differential_phi_signflip   forward
+    0.147066  differential                forward
+    0.261618  confirmed                   reverse_apply
+
+=== summary ===
+('confirmed', 'forward'): matched 5/5 samples
+
+-> Consistent match across all 5 samples: ('confirmed', 'forward')

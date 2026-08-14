@@ -1,0 +1,38 @@
+[inference]
+  regime                  : observation=power  eta=0.85  basis_only=False  quadrature=True  obs_dim=48
+  device                  : cpu
+  network obs fidelity    : 0.862250
+  network obs RMSE        : 0.118770
+  refined obs fidelity    : 1.000000
+  refined obs RMSE        : 0.000076
+   theta: [ 0.504897  1.003396 -1.283223  1.061005  0.595309  1.127639]
+     phi: [-0.48946  -4.341142  1.170573  1.663703 -0.512532  0.718571]
+   delta: (not predicted in power mode)
+
+[vs dataset labels — diagnostic only; high obs fidelity matters more]
+  circular RMSE (network) : 1.617912
+  circular RMSE (refined) : 1.958933
+
+[interpretability] local sensitivity at this sample
+  probe contribution (normalized):
+       I1: 0.068
+       I2: 0.065
+       I3: 0.090
+       I4: 0.078
+      I12: 0.057
+      I23: 0.106
+      I34: 0.058
+      I14: 0.147
+     I12q: 0.077
+     I23q: 0.110
+     I34q: 0.066
+     I14q: 0.078
+  top-8 sensitive power indices:
+    obs[29]  (I14 port 1)  score=4.2009e+00
+    obs[31]  (I14 port 3)  score=3.9364e+00
+    obs[36]  (I23q port 0)  score=3.3389e+00
+    obs[30]  (I14 port 2)  score=2.9425e+00
+    obs[23]  (I23 port 3)  score=2.7701e+00
+    obs[15]  (I4 port 3)  score=2.6523e+00
+    obs[44]  (I14q port 0)  score=2.6262e+00
+    obs[20]  (I23 port 0)  score=2.5464e+00

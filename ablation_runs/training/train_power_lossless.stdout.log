@@ -1,0 +1,72 @@
+[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossless.npz
+[data] 5000 samples (power: 8 probes × 4 ports, obs_dim=32)
+
+[convention check] verifying assumed mesh convention against 5 real rows...
+
+=== sample 0 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.337646  confirmed                   reverse_apply
+    0.409818  differential                forward
+    0.409818  differential_phi_signflip   forward
+    0.419680  differential_transpose      forward
+    0.434165  differential_transpose      reverse_apply
+
+=== sample 1 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.292309  single_port                 forward
+    0.371875  differential                forward
+    0.371875  differential_phi_signflip   forward
+    0.394918  differential_transpose      reverse_apply
+    0.415122  single_port                 reverse_apply
+
+=== sample 2 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.487502  differential_transpose      forward
+    0.570704  differential                forward
+    0.570704  differential_phi_signflip   forward
+    0.617401  single_port                 reverse_apply
+    0.661135  differential_transpose      reverse_apply
+
+=== sample 3 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.356683  differential                forward
+    0.356683  differential_phi_signflip   forward
+    0.366278  differential_transpose      forward
+    0.426876  single_port                 forward
+    0.429663  differential                reverse_apply
+
+=== sample 4 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.507911  differential                forward
+    0.507911  differential_phi_signflip   forward
+    0.585589  single_port                 forward
+    0.622043  confirmed                   reverse_apply
+    0.717274  differential_phi_signflip   reverse_apply
+
+=== summary ===
+('confirmed', 'forward'): matched 5/5 samples
+
+-> Consistent match across all 5 samples: ('confirmed', 'forward')
+[data] train=4500  val=500  regime=power  eta=1.0  basis_only=False  quadrature=False  obs_dim=32  device=cpu
+[power/eta=1.0] epoch   0  train_loss=1.7247  val_obs_mse=0.02412  *best*
+[power/eta=1.0] epoch  10  train_loss=0.4673  val_obs_mse=0.01118
+[power/eta=1.0] epoch  20  train_loss=0.3626  val_obs_mse=0.00946
+[power/eta=1.0] epoch  30  train_loss=0.2870  val_obs_mse=0.00681  *best*
+[power/eta=1.0] epoch  40  train_loss=0.2323  val_obs_mse=0.00630
+[power/eta=1.0] epoch  50  train_loss=0.1997  val_obs_mse=0.00624
+[power/eta=1.0] epoch  59  train_loss=0.1924  val_obs_mse=0.00629
+restored best checkpoint (val_obs_mse=0.00612)
+
+[train] best val_obs_mse: 0.00612
+
+[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):
+  network only          : 0.93838  (min 0.31901)
+  + single-start refine  : 0.99200  (min 0.86665)
+  + 200-start refine   : 0.99990  (min 0.99840)
+
+[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossless.pt

@@ -1,0 +1,72 @@
+[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossy.npz
+[data] 5000 samples (exact-field mode)
+
+[convention check] verifying assumed mesh convention against 5 real rows...
+
+=== sample 0 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.128561  confirmed                   reverse_apply   row_reblock
+    0.327452  differential_phi_signflip   reverse_apply   col_interleaved
+    0.367611  differential_phi_signflip   forward         row_interleaved
+    0.367922  differential_phi_signflip   forward         col_interleaved
+    0.392541  differential_phi_signflip   reverse_apply   col_reblock
+
+=== sample 1 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.250246  confirmed                   reverse_apply   col_reblock
+    0.313858  confirmed                   reverse_apply   row_interleaved
+    0.317905  confirmed                   reverse_apply   row_reblock
+    0.322872  differential_phi_signflip   reverse_apply   col_interleaved
+    0.324454  confirmed                   reverse_apply   col_interleaved
+
+=== sample 2 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.275391  differential_transpose      reverse_apply   full_matrix_reblock
+    0.303760  differential_transpose      forward         full_matrix_reblock
+    0.316999  confirmed                   forward         full_matrix_reblock
+    0.319989  differential_phi_signflip   forward         col_reblock
+    0.338348  differential                forward         row_interleaved
+
+=== sample 3 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.256497  confirmed                   reverse_apply   row_reblock
+    0.347445  single_port                 reverse_apply   row_interleaved
+    0.356190  single_port                 forward         col_interleaved
+    0.357448  single_port                 forward         col_reblock
+    0.373562  differential_phi_signflip   forward         row_reblock
+
+=== sample 4 ===
+    max|err|  mzi variant                 block order     y layout
+    0.000000  confirmed                   forward         row_reblock  <-- MATCH
+    0.331548  differential_transpose      reverse_apply   row_interleaved
+    0.360175  single_port                 forward         col_interleaved
+    0.365563  confirmed                   forward         full_matrix_reblock
+    0.368056  single_port                 reverse_apply   col_interleaved
+    0.377926  differential                reverse_apply   full_matrix_reblock
+
+=== summary ===
+('confirmed', 'forward', 'row_reblock'): matched 5/5 samples
+
+-> Consistent match across all 5 samples: ('confirmed', 'forward', 'row_reblock')
+[data] train=4500  val=500  regime=exact  eta=0.85  basis_only=False  quadrature=False  obs_dim=32  device=cpu
+[exact/eta=0.85] epoch   0  train_loss=1.1298  val_obs_mse=0.02472  *best*
+[exact/eta=0.85] epoch  10  train_loss=0.5593  val_obs_mse=0.01465  *best*
+[exact/eta=0.85] epoch  20  train_loss=0.4176  val_obs_mse=0.01184  *best*
+[exact/eta=0.85] epoch  30  train_loss=0.2767  val_obs_mse=0.01059
+[exact/eta=0.85] epoch  40  train_loss=0.1949  val_obs_mse=0.01094
+[exact/eta=0.85] epoch  50  train_loss=0.1579  val_obs_mse=0.01197
+[exact/eta=0.85] epoch  59  train_loss=0.1524  val_obs_mse=0.01227
+restored best checkpoint (val_obs_mse=0.01016)
+
+[train] best val_obs_mse: 0.01016
+
+[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):
+  network only          : 0.56739  (min 0.02536)
+  + single-start refine  : 0.99341  (min 0.88894)
+  + 200-start refine   : 0.99986  (min 0.99518)
+
+[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossy.pt

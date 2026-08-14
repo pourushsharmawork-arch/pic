@@ -1,0 +1,4 @@
+build_mesh output shape: torch.Size([5, 4, 4]) torch.complex64
+max unitarity error: 3.187246591096482e-07
+Haar sample unitarity error (max over 2000): 1.1750205430871574e-06
+build_mesh Jacobian rank at a generic point: 16/16 (full rank - good)

@@ -1,0 +1,19 @@
+
+========================================================================
+Identifiability: power_basis_only  (obs_dim=16, n_params=12, eta=1.0)
+========================================================================
+Jacobian rank: 9/12  (obs dim 16, null dim 3, tol=0.0001)
+Singular values (top 8): [1.4924983978271484, 1.3384426832199097, 1.0898470878601074, 0.751774787902832, 0.6941487193107605, 0.27678290009498596, 0.126778706908226, 0.027473002672195435]
+→ 3 unobservable / gauge direction(s) at first order:
+
+  null #0: +1.000·phi_Ga34  +0.901·phi_Gb23  +0.570·phi_Gb12  +0.430·phi_Ga23  +0.331·phi_Ga12  -0.099·phi_Gb34
+           ** dominant φ direction: phi_Ga34
+
+  null #1: +1.000·phi_Gb34  +0.585·phi_Gb23  -0.560·phi_Ga23  +0.440·phi_Ga12  -0.415·phi_Ga34  +0.145·phi_Gb12
+           ** dominant φ direction: phi_Gb34
+
+  null #2: -1.000·phi_Ga12  +0.995·phi_Gb12  -0.867·phi_Ga23  -0.133·phi_Gb34  +0.128·phi_Ga34
+           ** dominant φ direction: phi_Ga12
+
+  Numerical probe along null #0 (ε=0.15): max|Δobs| = 2.384e-07
+  (should be ≪ 1 if truly a gauge/null direction; large → nonlinear or wrong tol)

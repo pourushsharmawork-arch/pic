@@ -1,0 +1,907 @@
+{
+  "project_root": "/home/pourushsharma/projects/pic/qf/PARAMS",
+  "config": {
+    "python": "/home/pourushsharma/projects/.venv/bin/python",
+    "n_samples": 5000,
+    "epochs": 60,
+    "n_refine_eval": 200,
+    "n_starts": 200,
+    "seed": 123,
+    "index": 0,
+    "skip_data": false,
+    "skip_training": false,
+    "skip_legacy": true,
+    "skip_inference": false,
+    "skip_identifiability": false,
+    "skip_sanity": false,
+    "stop_on_error": true,
+    "resume": false,
+    "only": null,
+    "device": null
+  },
+  "generated_at": "2026-08-13 13:49:32",
+  "experiments": [
+    {
+      "name": "exact_lossless",
+      "observation": "exact",
+      "eta": 1.0,
+      "basis_only": false,
+      "quadrature": false,
+      "data_file": "/home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossless.npz",
+      "checkpoint": "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossless.pt",
+      "kind": "unified"
+    },
+    {
+      "name": "exact_lossy",
+      "observation": "exact",
+      "eta": 0.85,
+      "basis_only": false,
+      "quadrature": false,
+      "data_file": "/home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossy.npz",
+      "checkpoint": "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossy.pt",
+      "kind": "unified"
+    },
+    {
+      "name": "power_lossless",
+      "observation": "power",
+      "eta": 1.0,
+      "basis_only": false,
+      "quadrature": false,
+      "data_file": "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossless.npz",
+      "checkpoint": "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossless.pt",
+      "kind": "unified"
+    },
+    {
+      "name": "power_basis_lossless",
+      "observation": "power",
+      "eta": 1.0,
+      "basis_only": true,
+      "quadrature": false,
+      "data_file": "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_basis_lossless.npz",
+      "checkpoint": "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_basis_lossless.pt",
+      "kind": "unified"
+    },
+    {
+      "name": "power_lossy",
+      "observation": "power",
+      "eta": 0.85,
+      "basis_only": false,
+      "quadrature": false,
+      "data_file": "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossy.npz",
+      "checkpoint": "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossy.pt",
+      "kind": "unified"
+    },
+    {
+      "name": "power_quad_lossless",
+      "observation": "power",
+      "eta": 1.0,
+      "basis_only": false,
+      "quadrature": true,
+      "data_file": "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossless.npz",
+      "checkpoint": "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossless.pt",
+      "kind": "unified"
+    },
+    {
+      "name": "power_quad_lossy",
+      "observation": "power",
+      "eta": 0.85,
+      "basis_only": false,
+      "quadrature": true,
+      "data_file": "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossy.npz",
+      "checkpoint": "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossy.pt",
+      "kind": "unified"
+    }
+  ],
+  "results": [
+    {
+      "name": "verify_convention",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "verify_convention.py"
+      ],
+      "returncode": 0,
+      "elapsed_s": 2.058548935001454,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/sanity/verify_convention.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/sanity/verify_convention.stderr.log",
+      "stdout_tail": "    0.072487  differential_phi_signflip   forward\n    0.118508  confirmed                   reverse_apply\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.063787  differential_transpose      forward\n    0.070258  differential                reverse_apply\n    0.070258  differential_phi_signflip   reverse_apply\n    0.084379  confirmed                   reverse_apply\n    0.109260  differential_transpose      reverse_apply\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.055470  differential                forward\n    0.055470  differential_phi_signflip   forward\n    0.061415  single_port                 forward\n    0.078779  differential_transpose      forward\n    0.095483  differential_phi_signflip   reverse_apply\n\n=== summary ===\n('confirmed', 'forward'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward')\n\n========================================================================\nSelf-test on synthetic power data (eta=0.85, quadrature=True).\nExpect the top match to be ('confirmed', 'forward') with max|err| ~ 0.\n\n\n=== sample 0 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.111522  differential_phi_signflip   forward\n    0.111522  differential_transpose      forward\n    0.121868  differential                forward\n    0.133917  confirmed                   reverse_apply\n    0.150358  single_port                 reverse_apply\n\n=== sample 1 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.065999  differential                reverse_apply\n    0.069486  confirmed                   reverse_apply\n    0.105392  single_port                 reverse_apply\n    0.105823  differential_transpose      forward\n    0.109825  differential                forward\n\n=== sample 2 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.051972  differential_transpose      forward\n    0.091043  single_port                 forward\n    0.110846  differential                forward\n    0.110846  differential_phi_signflip   forward\n    0.233562  confirmed                   reverse_apply\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.034859  single_port                 forward\n    0.041355  differential_transpose      forward\n    0.041355  differential_phi_signflip   forward\n    0.048279  differential                forward\n    0.164705  differential_phi_signflip   reverse_apply\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.096036  differential_transpose      forward\n    0.136465  single_port                 forward\n    0.147066  differential_phi_signflip   forward\n    0.147066  differential                forward\n    0.261618  confirmed                   reverse_apply\n\n=== summary ===\n('confirmed', 'forward'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward')",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "data_pipeline_selftest",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "data_pipeline.py"
+      ],
+      "returncode": 0,
+      "elapsed_s": 2.049950335000176,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/sanity/data_pipeline_selftest.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/sanity/data_pipeline_selftest.stderr.log",
+      "stdout_tail": "train y: torch.Size([1800, 32])  val y: torch.Size([200, 32])\nsincos: torch.Size([1800, 32])  U: torch.complex64 torch.Size([1800, 4, 4])\nmeasurement_to_U round-trip max abs err (should be ~0): 0.0",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "mesh_forward_selftest",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "mesh_forward.py"
+      ],
+      "returncode": 0,
+      "elapsed_s": 1.7245945290014788,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/sanity/mesh_forward_selftest.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/sanity/mesh_forward_selftest.stderr.log",
+      "stdout_tail": "build_mesh output shape: torch.Size([5, 4, 4]) torch.complex64\nmax unitarity error: 3.187246591096482e-07\nHaar sample unitarity error (max over 2000): 1.1750205430871574e-06\nbuild_mesh Jacobian rank at a generic point: 16/16 (full rank - good)",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "data_exact_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "datagen.py",
+        "--observation",
+        "exact",
+        "--loss",
+        "1.0",
+        "--n_samples",
+        "5000",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossless.npz"
+      ],
+      "returncode": 0,
+      "elapsed_s": 9.670821028001228,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_exact_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_exact_lossless.stderr.log",
+      "stdout_tail": "Welcome ! Please take off your shoes. And enjoy.\nPackage mounted.\ngenerating 5000 samples  observation=exact  loss=1.0  basis_only=False  quadrature=False  obs_dim=32\nsaved (5000, 48) -> /home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossless.npz",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "data_exact_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "datagen.py",
+        "--observation",
+        "exact",
+        "--loss",
+        "0.85",
+        "--n_samples",
+        "5000",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossy.npz"
+      ],
+      "returncode": 0,
+      "elapsed_s": 9.976291233000666,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_exact_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_exact_lossy.stderr.log",
+      "stdout_tail": "Welcome ! Please take off your shoes. And enjoy.\nPackage mounted.\ngenerating 5000 samples  observation=exact  loss=0.85  basis_only=False  quadrature=False  obs_dim=32\nsaved (5000, 48) -> /home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossy.npz",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "data_power_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "datagen.py",
+        "--observation",
+        "power",
+        "--loss",
+        "1.0",
+        "--n_samples",
+        "5000",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossless.npz"
+      ],
+      "returncode": 0,
+      "elapsed_s": 8.862142762998701,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_lossless.stderr.log",
+      "stdout_tail": "Welcome ! Please take off your shoes. And enjoy.\nPackage mounted.\ngenerating 5000 samples  observation=power  loss=1.0  basis_only=False  quadrature=False  obs_dim=32\nsaved (5000, 48) -> /home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossless.npz",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "data_power_basis_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "datagen.py",
+        "--observation",
+        "power",
+        "--loss",
+        "1.0",
+        "--n_samples",
+        "5000",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_basis_lossless.npz",
+        "--basis_only"
+      ],
+      "returncode": 0,
+      "elapsed_s": 9.689184479000687,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_basis_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_basis_lossless.stderr.log",
+      "stdout_tail": "Welcome ! Please take off your shoes. And enjoy.\nPackage mounted.\ngenerating 5000 samples  observation=power  loss=1.0  basis_only=True  quadrature=False  obs_dim=16\nsaved (5000, 32) -> /home/pourushsharma/projects/pic/qf/PARAMS/data/power_basis_lossless.npz",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "data_power_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "datagen.py",
+        "--observation",
+        "power",
+        "--loss",
+        "0.85",
+        "--n_samples",
+        "5000",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossy.npz"
+      ],
+      "returncode": 0,
+      "elapsed_s": 8.742625341001258,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_lossy.stderr.log",
+      "stdout_tail": "Welcome ! Please take off your shoes. And enjoy.\nPackage mounted.\ngenerating 5000 samples  observation=power  loss=0.85  basis_only=False  quadrature=False  obs_dim=32\nsaved (5000, 48) -> /home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossy.npz",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "data_power_quad_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "datagen.py",
+        "--observation",
+        "power",
+        "--loss",
+        "1.0",
+        "--n_samples",
+        "5000",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossless.npz",
+        "--quadrature"
+      ],
+      "returncode": 0,
+      "elapsed_s": 9.345651046998682,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_quad_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_quad_lossless.stderr.log",
+      "stdout_tail": "Welcome ! Please take off your shoes. And enjoy.\nPackage mounted.\ngenerating 5000 samples  observation=power  loss=1.0  basis_only=False  quadrature=True  obs_dim=48\nsaved (5000, 64) -> /home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossless.npz",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "data_power_quad_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "datagen.py",
+        "--observation",
+        "power",
+        "--loss",
+        "0.85",
+        "--n_samples",
+        "5000",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossy.npz",
+        "--quadrature"
+      ],
+      "returncode": 0,
+      "elapsed_s": 9.619771754001704,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_quad_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/data/data_power_quad_lossy.stderr.log",
+      "stdout_tail": "Welcome ! Please take off your shoes. And enjoy.\nPackage mounted.\ngenerating 5000 samples  observation=power  loss=0.85  basis_only=False  quadrature=True  obs_dim=48\nsaved (5000, 64) -> /home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossy.npz",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "train_exact_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "run_regime.py",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossless.npz",
+        "--observation",
+        "exact",
+        "--eta",
+        "1.0",
+        "--epochs",
+        "60",
+        "--n_refine_eval",
+        "200",
+        "--n_starts",
+        "200",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossless.pt"
+      ],
+      "returncode": 0,
+      "elapsed_s": 202.54999722499997,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_exact_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_exact_lossless.stderr.log",
+      "stdout_tail": "[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossless.npz\n[data] 5000 samples (exact-field mode)\n\n[convention check] verifying assumed mesh convention against 5 real rows...\n\n=== sample 0 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.294788  confirmed                   reverse_apply   row_reblock\n    0.818097  differential_phi_signflip   forward         col_reblock\n    0.922156  differential_phi_signflip   reverse_apply   col_interleaved\n    0.971267  single_port                 reverse_apply   full_matrix_reblock\n    0.988571  differential_phi_signflip   forward         row_interleaved\n\n=== sample 1 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.832608  confirmed                   reverse_apply   col_reblock\n    0.841416  confirmed                   reverse_apply   row_reblock\n    0.856910  confirmed                   reverse_apply   col_interleaved\n    0.908902  differential_phi_signflip   forward         col_interleaved\n    0.912200  differential_phi_signflip   reverse_apply   row_reblock\n\n=== sample 2 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.682160  differential_transpose      reverse_apply   full_matrix_reblock\n    0.907505  differential_transpose      forward         col_reblock\n    0.907505  differential_transpose      forward         full_matrix_reblock\n    0.911461  confirmed                   forward         full_matrix_reblock\n    0.942634  single_port                 forward         col_interleaved\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.781160  confirmed                   reverse_apply   row_reblock\n    0.921794  confirmed                   forward         full_matrix_reblock\n    0.978410  differential_phi_signflip   reverse_apply   row_reblock\n    0.981743  confirmed                   forward         row_interleaved\n    0.988966  single_port                 reverse_apply   row_interleaved\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.772509  differential_transpose      reverse_apply   row_interleaved\n    0.916336  differential                reverse_apply   full_matrix_reblock\n    0.924716  single_port                 reverse_apply   col_interleaved\n    0.946247  differential_transpose      reverse_apply   col_reblock\n    0.960441  confirmed                   forward         full_matrix_reblock\n\n=== summary ===\n('confirmed', 'forward', 'row_reblock'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward', 'row_reblock')\n[data] train=4500  val=500  regime=exact  eta=1.0  basis_only=False  quadrature=False  obs_dim=32  device=cpu\n[exact/eta=1.0] epoch   0  train_loss=7.7354  val_obs_mse=0.21810  *best*\n[exact/eta=1.0] epoch  10  train_loss=2.6943  val_obs_mse=0.08766  *best*\n[exact/eta=1.0] epoch  20  train_loss=1.5862  val_obs_mse=0.07319  *best*\n[exact/eta=1.0] epoch  30  train_loss=0.9907  val_obs_mse=0.07299\n[exact/eta=1.0] epoch  40  train_loss=0.6238  val_obs_mse=0.07651\n[exact/eta=1.0] epoch  50  train_loss=0.4348  val_obs_mse=0.08550\n[exact/eta=1.0] epoch  59  train_loss=0.4099  val_obs_mse=0.08808\nrestored best checkpoint (val_obs_mse=0.07133)\n\n[train] best val_obs_mse: 0.07133\n\n[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):\n  network only          : 0.52589  (min 0.01898)\n  + single-start refine  : 0.98839  (min 0.82047)\n  + 200-start refine   : 0.99948  (min 0.98766)\n\n[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossless.pt",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "train_exact_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "run_regime.py",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossy.npz",
+        "--observation",
+        "exact",
+        "--eta",
+        "0.85",
+        "--epochs",
+        "60",
+        "--n_refine_eval",
+        "200",
+        "--n_starts",
+        "200",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossy.pt"
+      ],
+      "returncode": 0,
+      "elapsed_s": 199.07541470400247,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_exact_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_exact_lossy.stderr.log",
+      "stdout_tail": "[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossy.npz\n[data] 5000 samples (exact-field mode)\n\n[convention check] verifying assumed mesh convention against 5 real rows...\n\n=== sample 0 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.128561  confirmed                   reverse_apply   row_reblock\n    0.327452  differential_phi_signflip   reverse_apply   col_interleaved\n    0.367611  differential_phi_signflip   forward         row_interleaved\n    0.367922  differential_phi_signflip   forward         col_interleaved\n    0.392541  differential_phi_signflip   reverse_apply   col_reblock\n\n=== sample 1 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.250246  confirmed                   reverse_apply   col_reblock\n    0.313858  confirmed                   reverse_apply   row_interleaved\n    0.317905  confirmed                   reverse_apply   row_reblock\n    0.322872  differential_phi_signflip   reverse_apply   col_interleaved\n    0.324454  confirmed                   reverse_apply   col_interleaved\n\n=== sample 2 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.275391  differential_transpose      reverse_apply   full_matrix_reblock\n    0.303760  differential_transpose      forward         full_matrix_reblock\n    0.316999  confirmed                   forward         full_matrix_reblock\n    0.319989  differential_phi_signflip   forward         col_reblock\n    0.338348  differential                forward         row_interleaved\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.256497  confirmed                   reverse_apply   row_reblock\n    0.347445  single_port                 reverse_apply   row_interleaved\n    0.356190  single_port                 forward         col_interleaved\n    0.357448  single_port                 forward         col_reblock\n    0.373562  differential_phi_signflip   forward         row_reblock\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order     y layout\n    0.000000  confirmed                   forward         row_reblock  <-- MATCH\n    0.331548  differential_transpose      reverse_apply   row_interleaved\n    0.360175  single_port                 forward         col_interleaved\n    0.365563  confirmed                   forward         full_matrix_reblock\n    0.368056  single_port                 reverse_apply   col_interleaved\n    0.377926  differential                reverse_apply   full_matrix_reblock\n\n=== summary ===\n('confirmed', 'forward', 'row_reblock'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward', 'row_reblock')\n[data] train=4500  val=500  regime=exact  eta=0.85  basis_only=False  quadrature=False  obs_dim=32  device=cpu\n[exact/eta=0.85] epoch   0  train_loss=1.1298  val_obs_mse=0.02472  *best*\n[exact/eta=0.85] epoch  10  train_loss=0.5593  val_obs_mse=0.01465  *best*\n[exact/eta=0.85] epoch  20  train_loss=0.4176  val_obs_mse=0.01184  *best*\n[exact/eta=0.85] epoch  30  train_loss=0.2767  val_obs_mse=0.01059\n[exact/eta=0.85] epoch  40  train_loss=0.1949  val_obs_mse=0.01094\n[exact/eta=0.85] epoch  50  train_loss=0.1579  val_obs_mse=0.01197\n[exact/eta=0.85] epoch  59  train_loss=0.1524  val_obs_mse=0.01227\nrestored best checkpoint (val_obs_mse=0.01016)\n\n[train] best val_obs_mse: 0.01016\n\n[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):\n  network only          : 0.56739  (min 0.02536)\n  + single-start refine  : 0.99341  (min 0.88894)\n  + 200-start refine   : 0.99986  (min 0.99518)\n\n[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossy.pt",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "train_power_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "run_regime.py",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossless.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "1.0",
+        "--epochs",
+        "60",
+        "--n_refine_eval",
+        "200",
+        "--n_starts",
+        "200",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossless.pt"
+      ],
+      "returncode": 0,
+      "elapsed_s": 212.9841846260024,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_lossless.stderr.log",
+      "stdout_tail": "[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossless.npz\n[data] 5000 samples (power: 8 probes \u00d7 4 ports, obs_dim=32)\n\n[convention check] verifying assumed mesh convention against 5 real rows...\n\n=== sample 0 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.337646  confirmed                   reverse_apply\n    0.409818  differential                forward\n    0.409818  differential_phi_signflip   forward\n    0.419680  differential_transpose      forward\n    0.434165  differential_transpose      reverse_apply\n\n=== sample 1 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.292309  single_port                 forward\n    0.371875  differential                forward\n    0.371875  differential_phi_signflip   forward\n    0.394918  differential_transpose      reverse_apply\n    0.415122  single_port                 reverse_apply\n\n=== sample 2 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.487502  differential_transpose      forward\n    0.570704  differential                forward\n    0.570704  differential_phi_signflip   forward\n    0.617401  single_port                 reverse_apply\n    0.661135  differential_transpose      reverse_apply\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.356683  differential                forward\n    0.356683  differential_phi_signflip   forward\n    0.366278  differential_transpose      forward\n    0.426876  single_port                 forward\n    0.429663  differential                reverse_apply\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.507911  differential                forward\n    0.507911  differential_phi_signflip   forward\n    0.585589  single_port                 forward\n    0.622043  confirmed                   reverse_apply\n    0.717274  differential_phi_signflip   reverse_apply\n\n=== summary ===\n('confirmed', 'forward'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward')\n[data] train=4500  val=500  regime=power  eta=1.0  basis_only=False  quadrature=False  obs_dim=32  device=cpu\n[power/eta=1.0] epoch   0  train_loss=1.7247  val_obs_mse=0.02412  *best*\n[power/eta=1.0] epoch  10  train_loss=0.4673  val_obs_mse=0.01118\n[power/eta=1.0] epoch  20  train_loss=0.3626  val_obs_mse=0.00946\n[power/eta=1.0] epoch  30  train_loss=0.2870  val_obs_mse=0.00681  *best*\n[power/eta=1.0] epoch  40  train_loss=0.2323  val_obs_mse=0.00630\n[power/eta=1.0] epoch  50  train_loss=0.1997  val_obs_mse=0.00624\n[power/eta=1.0] epoch  59  train_loss=0.1924  val_obs_mse=0.00629\nrestored best checkpoint (val_obs_mse=0.00612)\n\n[train] best val_obs_mse: 0.00612\n\n[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):\n  network only          : 0.93838  (min 0.31901)\n  + single-start refine  : 0.99200  (min 0.86665)\n  + 200-start refine   : 0.99990  (min 0.99840)\n\n[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossless.pt",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "train_power_basis_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "run_regime.py",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_basis_lossless.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "1.0",
+        "--epochs",
+        "60",
+        "--n_refine_eval",
+        "200",
+        "--n_starts",
+        "200",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_basis_lossless.pt",
+        "--basis_only"
+      ],
+      "returncode": 0,
+      "elapsed_s": 217.0709229460008,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_basis_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_basis_lossless.stderr.log",
+      "stdout_tail": "[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/power_basis_lossless.npz\n[data] 5000 samples (power: 4 probes \u00d7 4 ports, obs_dim=16)\n\n[convention check] verifying assumed mesh convention against 5 real rows...\n\n=== sample 0 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.133017  differential                forward\n    0.133017  differential_transpose      forward\n    0.133017  differential_phi_signflip   forward\n    0.318301  confirmed                   reverse_apply\n    0.397306  single_port                 forward\n\n=== sample 1 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.202372  confirmed                   reverse_apply\n    0.214634  single_port                 reverse_apply\n    0.237787  differential_phi_signflip   reverse_apply\n    0.237787  differential                reverse_apply\n    0.237787  differential_transpose      reverse_apply\n\n=== sample 2 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.269945  confirmed                   reverse_apply\n    0.325075  single_port                 reverse_apply\n    0.433173  differential                forward\n    0.433173  differential_phi_signflip   forward\n    0.433173  differential_transpose      forward\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.085139  single_port                 forward\n    0.101101  differential                forward\n    0.101101  differential_phi_signflip   forward\n    0.101101  differential_transpose      forward\n    0.372574  confirmed                   reverse_apply\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.269277  single_port                 forward\n    0.301942  differential                forward\n    0.301942  differential_phi_signflip   forward\n    0.301942  differential_transpose      forward\n    0.435706  confirmed                   reverse_apply\n\n=== summary ===\n('confirmed', 'forward'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward')\n[data] train=4500  val=500  regime=power  eta=1.0  basis_only=True  quadrature=False  obs_dim=16  device=cpu\n[power/eta=1.0] epoch   0  train_loss=0.8111  val_obs_mse=0.01183  *best*\n[power/eta=1.0] epoch  10  train_loss=0.2184  val_obs_mse=0.00812\n[power/eta=1.0] epoch  20  train_loss=0.1535  val_obs_mse=0.00250  *best*\n[power/eta=1.0] epoch  30  train_loss=0.1294  val_obs_mse=0.00219\n[power/eta=1.0] epoch  40  train_loss=0.1003  val_obs_mse=0.00132  *best*\n[power/eta=1.0] epoch  50  train_loss=0.0905  val_obs_mse=0.00117  *best*\n[power/eta=1.0] epoch  59  train_loss=0.0889  val_obs_mse=0.00113\nrestored best checkpoint (val_obs_mse=0.00113)\n\n[train] best val_obs_mse: 0.00113\n\n[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):\n  network only          : 0.98779  (min 0.76858)\n  + single-start refine  : 0.99981  (min 0.98888)\n  + 200-start refine   : 1.00000  (min 0.99982)\n\n[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_basis_lossless.pt",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "train_power_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "run_regime.py",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossy.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "0.85",
+        "--epochs",
+        "60",
+        "--n_refine_eval",
+        "200",
+        "--n_starts",
+        "200",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossy.pt"
+      ],
+      "returncode": 0,
+      "elapsed_s": 220.78323806199842,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_lossy.stderr.log",
+      "stdout_tail": "[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossy.npz\n[data] 5000 samples (power: 8 probes \u00d7 4 ports, obs_dim=32)\n\n[convention check] verifying assumed mesh convention against 5 real rows...\n\n=== sample 0 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.053682  confirmed                   reverse_apply\n    0.064081  differential                forward\n    0.064081  differential_phi_signflip   forward\n    0.066792  differential                reverse_apply\n    0.066792  differential_phi_signflip   reverse_apply\n\n=== sample 1 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.056102  single_port                 forward\n    0.061471  confirmed                   reverse_apply\n    0.068076  differential                forward\n    0.068076  differential_phi_signflip   forward\n    0.072538  differential_transpose      reverse_apply\n\n=== sample 2 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.062082  differential_transpose      forward\n    0.077079  differential                forward\n    0.077079  differential_phi_signflip   forward\n    0.097218  single_port                 reverse_apply\n    0.141419  single_port                 forward\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.057707  single_port                 forward\n    0.062861  differential                forward\n    0.062861  differential_phi_signflip   forward\n    0.068608  differential_transpose      forward\n    0.086197  differential                reverse_apply\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.052279  differential                forward\n    0.052279  differential_phi_signflip   forward\n    0.072447  single_port                 forward\n    0.109281  differential_transpose      reverse_apply\n    0.121099  differential                reverse_apply\n\n=== summary ===\n('confirmed', 'forward'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward')\n[data] train=4500  val=500  regime=power  eta=0.85  basis_only=False  quadrature=False  obs_dim=32  device=cpu\n[power/eta=0.85] epoch   0  train_loss=0.1236  val_obs_mse=0.00104  *best*\n[power/eta=0.85] epoch  10  train_loss=0.0611  val_obs_mse=0.00038  *best*\n[power/eta=0.85] epoch  20  train_loss=0.0455  val_obs_mse=0.00029  *best*\n[power/eta=0.85] epoch  30  train_loss=0.0402  val_obs_mse=0.00029\n[power/eta=0.85] epoch  40  train_loss=0.0365  val_obs_mse=0.00025  *best*\n[power/eta=0.85] epoch  50  train_loss=0.0357  val_obs_mse=0.00025\n[power/eta=0.85] epoch  59  train_loss=0.0343  val_obs_mse=0.00024\nrestored best checkpoint (val_obs_mse=0.00024)\n\n[train] best val_obs_mse: 0.00024\n\n[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):\n  network only          : 0.90946  (min 0.65425)\n  + single-start refine  : 0.99559  (min 0.94955)\n  + 200-start refine   : 0.99997  (min 0.99774)\n\n[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossy.pt",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "train_power_quad_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "run_regime.py",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossless.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "1.0",
+        "--epochs",
+        "60",
+        "--n_refine_eval",
+        "200",
+        "--n_starts",
+        "200",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossless.pt",
+        "--quadrature"
+      ],
+      "returncode": 0,
+      "elapsed_s": 226.76395994700215,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_quad_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_quad_lossless.stderr.log",
+      "stdout_tail": "[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossless.npz\n[data] 5000 samples (power: 12 probes \u00d7 4 ports, obs_dim=48)\n\n[convention check] verifying assumed mesh convention against 5 real rows...\n\n=== sample 0 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.337646  confirmed                   reverse_apply\n    0.409818  differential_phi_signflip   forward\n    0.419680  differential_transpose      forward\n    0.437685  differential_transpose      reverse_apply\n    0.493870  differential_phi_signflip   reverse_apply\n\n=== sample 1 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.425524  single_port                 forward\n    0.432723  differential_transpose      reverse_apply\n    0.481350  single_port                 reverse_apply\n    0.496889  differential_transpose      forward\n    0.496889  differential_phi_signflip   forward\n\n=== sample 2 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.503533  differential_transpose      forward\n    0.570704  differential_phi_signflip   forward\n    0.617401  single_port                 reverse_apply\n    0.661135  differential_transpose      reverse_apply\n    0.695013  confirmed                   reverse_apply\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.362266  differential_phi_signflip   forward\n    0.366278  differential_transpose      forward\n    0.457532  single_port                 forward\n    0.490663  confirmed                   reverse_apply\n    0.496708  differential_phi_signflip   reverse_apply\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.508080  differential                forward\n    0.547621  differential_phi_signflip   forward\n    0.585589  single_port                 forward\n    0.622043  confirmed                   reverse_apply\n    0.717274  differential                reverse_apply\n\n=== summary ===\n('confirmed', 'forward'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward')\n[data] train=4500  val=500  regime=power  eta=1.0  basis_only=False  quadrature=True  obs_dim=48  device=cpu\n[power/eta=1.0] epoch   0  train_loss=2.8689  val_obs_mse=0.03792  *best*\n[power/eta=1.0] epoch  10  train_loss=1.1954  val_obs_mse=0.02239  *best*\n[power/eta=1.0] epoch  20  train_loss=1.0682  val_obs_mse=0.02228\n[power/eta=1.0] epoch  30  train_loss=0.8704  val_obs_mse=0.01697  *best*\n[power/eta=1.0] epoch  40  train_loss=0.5950  val_obs_mse=0.01382  *best*\n[power/eta=1.0] epoch  50  train_loss=0.4263  val_obs_mse=0.01254  *best*\n[power/eta=1.0] epoch  59  train_loss=0.3808  val_obs_mse=0.01245\nrestored best checkpoint (val_obs_mse=0.01242)\n\n[train] best val_obs_mse: 0.01242\n\n[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):\n  network only          : 0.88254  (min 0.49474)\n  + single-start refine  : 0.99739  (min 0.88893)\n  + 200-start refine   : 0.99993  (min 0.99680)\n\n[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossless.pt",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "train_power_quad_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "run_regime.py",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossy.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "0.85",
+        "--epochs",
+        "60",
+        "--n_refine_eval",
+        "200",
+        "--n_starts",
+        "200",
+        "--out",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossy.pt",
+        "--quadrature"
+      ],
+      "returncode": 0,
+      "elapsed_s": 222.02530927000043,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_quad_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/training/train_power_quad_lossy.stderr.log",
+      "stdout_tail": "[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossy.npz\n[data] 5000 samples (power: 12 probes \u00d7 4 ports, obs_dim=48)\n\n[convention check] verifying assumed mesh convention against 5 real rows...\n\n=== sample 0 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.053682  confirmed                   reverse_apply\n    0.076312  differential_phi_signflip   forward\n    0.076312  differential_transpose      forward\n    0.080542  differential_phi_signflip   reverse_apply\n    0.080542  differential_transpose      reverse_apply\n\n=== sample 1 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.068076  differential                forward\n    0.072538  differential_transpose      reverse_apply\n    0.076781  single_port                 forward\n    0.080235  single_port                 reverse_apply\n    0.081333  confirmed                   reverse_apply\n\n=== sample 2 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.085752  differential_phi_signflip   forward\n    0.085752  differential_transpose      forward\n    0.093032  differential                forward\n    0.097218  single_port                 reverse_apply\n    0.141419  single_port                 forward\n\n=== sample 3 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.062861  differential_phi_signflip   forward\n    0.068608  differential_transpose      forward\n    0.082126  single_port                 forward\n    0.088433  single_port                 reverse_apply\n    0.097973  differential_phi_signflip   reverse_apply\n\n=== sample 4 ===\n    max|err|  mzi variant                 block order\n    0.000000  confirmed                   forward  <-- MATCH\n    0.068114  differential_phi_signflip   forward\n    0.076106  differential                forward\n    0.100506  single_port                 forward\n    0.121099  differential                reverse_apply\n    0.128335  differential_transpose      forward\n\n=== summary ===\n('confirmed', 'forward'): matched 5/5 samples\n\n-> Consistent match across all 5 samples: ('confirmed', 'forward')\n[data] train=4500  val=500  regime=power  eta=0.85  basis_only=False  quadrature=True  obs_dim=48  device=cpu\n[power/eta=0.85] epoch   0  train_loss=0.1765  val_obs_mse=0.00117  *best*\n[power/eta=0.85] epoch  10  train_loss=0.1013  val_obs_mse=0.00086  *best*\n[power/eta=0.85] epoch  20  train_loss=0.0810  val_obs_mse=0.00066\n[power/eta=0.85] epoch  30  train_loss=0.0718  val_obs_mse=0.00050\n[power/eta=0.85] epoch  40  train_loss=0.0702  val_obs_mse=0.00047\n[power/eta=0.85] epoch  50  train_loss=0.0649  val_obs_mse=0.00039  *best*\n[power/eta=0.85] epoch  59  train_loss=0.0639  val_obs_mse=0.00038  *best*\nrestored best checkpoint (val_obs_mse=0.00038)\n\n[train] best val_obs_mse: 0.00038\n\n[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):\n  network only          : 0.85296  (min 0.45357)\n  + single-start refine  : 0.99774  (min 0.90874)\n  + 200-start refine   : 0.99999  (min 0.99966)\n\n[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossy.pt",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "infer_exact_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "infer_interpret.py",
+        "--checkpoint",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossless.pt",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossless.npz",
+        "--observation",
+        "exact",
+        "--eta",
+        "1.0",
+        "--index",
+        "0"
+      ],
+      "returncode": 0,
+      "elapsed_s": 7.295164119997935,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_exact_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_exact_lossless.stderr.log",
+      "stdout_tail": "[inference]\n  regime                  : observation=exact  eta=1.0  basis_only=False  quadrature=False  obs_dim=32\n  device                  : cpu\n  network matrix fidelity : 0.617066\n  network frob error      : 1.313811\n  network obs fidelity    : 0.615028\n  refined matrix fidelity : 0.999998\n  refined frob error      : 0.002488\n  refined obs fidelity    : 0.999998\n   theta: [-0.505242  2.138368  1.858949 -1.061274  2.545913  1.126693]\n     phi: [-3.627791  1.944021 -1.965025  1.663663 -0.514844  3.855753]\n   delta: [ 0.399057 -1.831863 -1.712399  3.145062]\n\n[vs dataset labels \u2014 diagnostic only; high obs fidelity matters more]\n  circular RMSE (network) : 2.031548\n  circular RMSE (refined) : 2.235290\n\n[interpretability] local sensitivity at this sample\n  basis-probe contribution (normalized):\n    probe e0: 0.287\n    probe e1: 0.212\n    probe e2: 0.290\n    probe e3: 0.211\n  top-8 sensitive feature indices:\n    obs[21]  (Im mode 1, probe e2)  score=5.6481e-01\n    obs[20]  (Im mode 0, probe e2)  score=4.2486e-01\n    obs[ 6]  (Im mode 2, probe e0)  score=4.1881e-01\n    obs[17]  (Re mode 1, probe e2)  score=4.0028e-01\n    obs[ 4]  (Im mode 0, probe e0)  score=3.9635e-01\n    obs[16]  (Re mode 0, probe e2)  score=3.5338e-01\n    obs[ 0]  (Re mode 0, probe e0)  score=3.5160e-01\n    obs[30]  (Im mode 2, probe e3)  score=3.4086e-01",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "infer_exact_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "infer_interpret.py",
+        "--checkpoint",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/exact_lossy.pt",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/exact_lossy.npz",
+        "--observation",
+        "exact",
+        "--eta",
+        "0.85",
+        "--index",
+        "0"
+      ],
+      "returncode": 0,
+      "elapsed_s": 8.950729011001386,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_exact_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_exact_lossy.stderr.log",
+      "stdout_tail": "[inference]\n  regime                  : observation=exact  eta=0.85  basis_only=False  quadrature=False  obs_dim=32\n  device                  : cpu\n  network matrix fidelity : 0.904454\n  network frob error      : 0.241866\n  network obs fidelity    : 0.904410\n  refined matrix fidelity : 1.000000\n  refined frob error      : 0.000050\n  refined obs fidelity    : 1.000000\n   theta: [-2.636805  2.138247 -1.283261  1.060988  2.546303 -1.127777]\n     phi: [-0.490045  1.940906 -1.971589  1.663672 -0.511409  0.719188]\n   delta: [ 0.3994   -1.835273 -1.709318 -3.137997]\n\n[vs dataset labels \u2014 diagnostic only; high obs fidelity matters more]\n  circular RMSE (network) : 2.287780\n  circular RMSE (refined) : 2.445956\n\n[interpretability] local sensitivity at this sample\n  basis-probe contribution (normalized):\n    probe e0: 0.274\n    probe e1: 0.225\n    probe e2: 0.231\n    probe e3: 0.271\n  top-8 sensitive feature indices:\n    obs[17]  (Re mode 1, probe e2)  score=9.1714e-01\n    obs[ 9]  (Re mode 1, probe e1)  score=8.1373e-01\n    obs[ 2]  (Re mode 2, probe e0)  score=7.8666e-01\n    obs[31]  (Im mode 3, probe e3)  score=7.7918e-01\n    obs[ 6]  (Im mode 2, probe e0)  score=7.6815e-01\n    obs[13]  (Im mode 1, probe e1)  score=7.4884e-01\n    obs[28]  (Im mode 0, probe e3)  score=7.4615e-01\n    obs[24]  (Re mode 0, probe e3)  score=7.4127e-01",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "infer_power_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "infer_interpret.py",
+        "--checkpoint",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossless.pt",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossless.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "1.0",
+        "--index",
+        "0"
+      ],
+      "returncode": 0,
+      "elapsed_s": 7.58077334599875,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_lossless.stderr.log",
+      "stdout_tail": "[inference]\n  regime                  : observation=power  eta=1.0  basis_only=False  quadrature=False  obs_dim=32\n  device                  : cpu\n  network obs fidelity    : 0.975693\n  network obs RMSE        : 0.278977\n  refined obs fidelity    : 1.000000\n  refined obs RMSE        : 0.000424\n   theta: [-0.504772  1.003254 -1.283311 -1.061018  0.595256  1.127756]\n     phi: [ 2.651326 -1.202283 -1.97064  -1.47744  -0.509818  0.718083]\n   delta: (not predicted in power mode)\n\n[vs dataset labels \u2014 diagnostic only; high obs fidelity matters more]\n  circular RMSE (network) : 1.881545\n  circular RMSE (refined) : 2.072869\n\n[interpretability] local sensitivity at this sample\n  probe contribution (normalized):\n       I1: 0.129\n       I2: 0.113\n       I3: 0.112\n       I4: 0.107\n      I12: 0.126\n      I23: 0.140\n      I34: 0.146\n      I14: 0.128\n  top-8 sensitive power indices:\n    obs[24]  (I34 port 0)  score=5.1919e-01\n    obs[25]  (I34 port 1)  score=4.5921e-01\n    obs[18]  (I12 port 2)  score=4.4793e-01\n    obs[21]  (I23 port 1)  score=4.4255e-01\n    obs[22]  (I23 port 2)  score=4.4124e-01\n    obs[29]  (I14 port 1)  score=4.2721e-01\n    obs[ 2]  (I1 port 2)  score=4.2352e-01\n    obs[20]  (I23 port 0)  score=3.9133e-01",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "infer_power_basis_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "infer_interpret.py",
+        "--checkpoint",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_basis_lossless.pt",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_basis_lossless.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "1.0",
+        "--index",
+        "0",
+        "--basis_only"
+      ],
+      "returncode": 0,
+      "elapsed_s": 7.147087001998443,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_basis_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_basis_lossless.stderr.log",
+      "stdout_tail": "[inference]\n  regime                  : observation=power  eta=1.0  basis_only=True  quadrature=False  obs_dim=16\n  device                  : cpu\n  network obs fidelity    : 0.994808\n  network obs RMSE        : 0.094487\n  refined obs fidelity    : 1.000000\n  refined obs RMSE        : 0.000048\n   theta: [ 2.607738  1.029998  1.346061 -2.109085  2.546338 -2.013767]\n     phi: [-1.774536 -2.287915 -2.037483  2.783893 -0.780675 -1.822636]\n   delta: (not predicted in power mode)\n\n[vs dataset labels \u2014 diagnostic only; high obs fidelity matters more]\n  circular RMSE (network) : 1.937719\n  circular RMSE (refined) : 1.965645\n\n[interpretability] local sensitivity at this sample\n  probe contribution (normalized):\n       I1: 0.215\n       I2: 0.306\n       I3: 0.262\n       I4: 0.217\n  top-8 sensitive power indices:\n    obs[ 5]  (I2 port 1)  score=7.1975e-01\n    obs[ 7]  (I2 port 3)  score=6.6144e-01\n    obs[ 8]  (I3 port 0)  score=6.1711e-01\n    obs[11]  (I3 port 3)  score=5.4551e-01\n    obs[14]  (I4 port 2)  score=5.3029e-01\n    obs[ 1]  (I1 port 1)  score=4.6823e-01\n    obs[ 0]  (I1 port 0)  score=4.5742e-01\n    obs[ 6]  (I2 port 2)  score=4.3180e-01",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "infer_power_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "infer_interpret.py",
+        "--checkpoint",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_lossy.pt",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_lossy.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "0.85",
+        "--index",
+        "0"
+      ],
+      "returncode": 0,
+      "elapsed_s": 7.4464873889992305,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_lossy.stderr.log",
+      "stdout_tail": "[inference]\n  regime                  : observation=power  eta=0.85  basis_only=False  quadrature=False  obs_dim=32\n  device                  : cpu\n  network obs fidelity    : 0.884132\n  network obs RMSE        : 0.088522\n  refined obs fidelity    : 1.000000\n  refined obs RMSE        : 0.000071\n   theta: [0.504884 1.003372 1.858428 1.060995 0.595214 1.127779]\n     phi: [ 0.489692 -1.942317 -1.170244  1.478068 -2.629153 -3.860441]\n   delta: (not predicted in power mode)\n\n[vs dataset labels \u2014 diagnostic only; high obs fidelity matters more]\n  circular RMSE (network) : 1.040575\n  circular RMSE (refined) : 1.276314\n\n[interpretability] local sensitivity at this sample\n  probe contribution (normalized):\n       I1: 0.104\n       I2: 0.113\n       I3: 0.074\n       I4: 0.138\n      I12: 0.059\n      I23: 0.097\n      I34: 0.131\n      I14: 0.283\n  top-8 sensitive power indices:\n    obs[31]  (I14 port 3)  score=1.4518e+01\n    obs[30]  (I14 port 2)  score=1.1369e+01\n    obs[29]  (I14 port 1)  score=1.1009e+01\n    obs[28]  (I14 port 0)  score=8.9653e+00\n    obs[25]  (I34 port 1)  score=6.7767e+00\n    obs[14]  (I4 port 2)  score=6.7013e+00\n    obs[15]  (I4 port 3)  score=5.6610e+00\n    obs[ 0]  (I1 port 0)  score=5.6109e+00",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "infer_power_quad_lossless",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "infer_interpret.py",
+        "--checkpoint",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossless.pt",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossless.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "1.0",
+        "--index",
+        "0",
+        "--quadrature"
+      ],
+      "returncode": 0,
+      "elapsed_s": 7.697212778999528,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_quad_lossless.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_quad_lossless.stderr.log",
+      "stdout_tail": "[inference]\n  regime                  : observation=power  eta=1.0  basis_only=False  quadrature=True  obs_dim=48\n  device                  : cpu\n  network obs fidelity    : 0.952564\n  network obs RMSE        : 0.502296\n  refined obs fidelity    : 1.000000\n  refined obs RMSE        : 0.000162\n   theta: [ 0.50481   1.003379  1.858296 -1.060997  2.546329  2.013704]\n     phi: [-0.490338  1.940437  1.170029  1.663641 -3.652754  3.860829]\n   delta: (not predicted in power mode)\n\n[vs dataset labels \u2014 diagnostic only; high obs fidelity matters more]\n  circular RMSE (network) : 1.421189\n  circular RMSE (refined) : 1.558916\n\n[interpretability] local sensitivity at this sample\n  probe contribution (normalized):\n       I1: 0.082\n       I2: 0.075\n       I3: 0.061\n       I4: 0.072\n      I12: 0.083\n      I23: 0.105\n      I34: 0.079\n      I14: 0.083\n     I12q: 0.098\n     I23q: 0.082\n     I34q: 0.104\n     I14q: 0.077\n  top-8 sensitive power indices:\n    obs[20]  (I23 port 0)  score=5.3857e-01\n    obs[34]  (I12q port 2)  score=5.0545e-01\n    obs[41]  (I34q port 1)  score=5.0076e-01\n    obs[40]  (I34q port 0)  score=4.2593e-01\n    obs[35]  (I12q port 3)  score=4.1304e-01\n    obs[18]  (I12 port 2)  score=3.9813e-01\n    obs[22]  (I23 port 2)  score=3.9444e-01\n    obs[36]  (I23q port 0)  score=3.8068e-01",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "infer_power_quad_lossy",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "infer_interpret.py",
+        "--checkpoint",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossy.pt",
+        "--data",
+        "/home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossy.npz",
+        "--observation",
+        "power",
+        "--eta",
+        "0.85",
+        "--index",
+        "0",
+        "--quadrature"
+      ],
+      "returncode": 0,
+      "elapsed_s": 7.672195882001688,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_quad_lossy.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/inference/infer_power_quad_lossy.stderr.log",
+      "stdout_tail": "[inference]\n  regime                  : observation=power  eta=0.85  basis_only=False  quadrature=True  obs_dim=48\n  device                  : cpu\n  network obs fidelity    : 0.862250\n  network obs RMSE        : 0.118770\n  refined obs fidelity    : 1.000000\n  refined obs RMSE        : 0.000076\n   theta: [ 0.504897  1.003396 -1.283223  1.061005  0.595309  1.127639]\n     phi: [-0.48946  -4.341142  1.170573  1.663703 -0.512532  0.718571]\n   delta: (not predicted in power mode)\n\n[vs dataset labels \u2014 diagnostic only; high obs fidelity matters more]\n  circular RMSE (network) : 1.617912\n  circular RMSE (refined) : 1.958933\n\n[interpretability] local sensitivity at this sample\n  probe contribution (normalized):\n       I1: 0.068\n       I2: 0.065\n       I3: 0.090\n       I4: 0.078\n      I12: 0.057\n      I23: 0.106\n      I34: 0.058\n      I14: 0.147\n     I12q: 0.077\n     I23q: 0.110\n     I34q: 0.066\n     I14q: 0.078\n  top-8 sensitive power indices:\n    obs[29]  (I14 port 1)  score=4.2009e+00\n    obs[31]  (I14 port 3)  score=3.9364e+00\n    obs[36]  (I23q port 0)  score=3.3389e+00\n    obs[30]  (I14 port 2)  score=2.9425e+00\n    obs[23]  (I23 port 3)  score=2.7701e+00\n    obs[15]  (I4 port 3)  score=2.6523e+00\n    obs[44]  (I14q port 0)  score=2.6262e+00\n    obs[20]  (I23 port 0)  score=2.5464e+00",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "ident_compare",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "identifiability.py",
+        "--compare"
+      ],
+      "returncode": 0,
+      "elapsed_s": 2.0162521279999055,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/identifiability/ident_compare.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/identifiability/ident_compare.stderr.log",
+      "stdout_tail": "\nIdentifiability comparison (eta=1.0, generic random point, seed=0)\nconfig                            obs params   rank   null  interpretation\n------------------------------------------------------------------------------------------\nexact_basis                        32     16     16      0  full local rank on U(4) (16 params)\npower_basis_only                   16     12      9      3  many \u03c6 (and some \u03b8) directions invisible \u2014 Q1\npower_superposition                32     12     12      0  local rank 12; global gauge via --global-demo \u2014 Q2\npower_superposition_quadrature     48     12     12      0  residual null = mesh gauge only \u2014 Q2\n\nRun `python identifiability.py --observation power --basis_only` for null-vector detail.\nHigh observation fidelity from the net does NOT mean params are unique \u2014 check null dim.",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "ident_q1_basis_null",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "identifiability.py",
+        "--observation",
+        "power",
+        "--basis_only",
+        "--probe-null",
+        "0"
+      ],
+      "returncode": 0,
+      "elapsed_s": 1.9013658280018717,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/identifiability/ident_q1_basis_null.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/identifiability/ident_q1_basis_null.stderr.log",
+      "stdout_tail": "\n========================================================================\nIdentifiability: power_basis_only  (obs_dim=16, n_params=12, eta=1.0)\n========================================================================\nJacobian rank: 9/12  (obs dim 16, null dim 3, tol=0.0001)\nSingular values (top 8): [1.4924983978271484, 1.3384426832199097, 1.0898470878601074, 0.751774787902832, 0.6941487193107605, 0.27678290009498596, 0.126778706908226, 0.027473002672195435]\n\u2192 3 unobservable / gauge direction(s) at first order:\n\n  null #0: +1.000\u00b7phi_Ga34  +0.901\u00b7phi_Gb23  +0.570\u00b7phi_Gb12  +0.430\u00b7phi_Ga23  +0.331\u00b7phi_Ga12  -0.099\u00b7phi_Gb34\n           ** dominant \u03c6 direction: phi_Ga34\n\n  null #1: +1.000\u00b7phi_Gb34  +0.585\u00b7phi_Gb23  -0.560\u00b7phi_Ga23  +0.440\u00b7phi_Ga12  -0.415\u00b7phi_Ga34  +0.145\u00b7phi_Gb12\n           ** dominant \u03c6 direction: phi_Gb34\n\n  null #2: -1.000\u00b7phi_Ga12  +0.995\u00b7phi_Gb12  -0.867\u00b7phi_Ga23  -0.133\u00b7phi_Gb34  +0.128\u00b7phi_Ga34\n           ** dominant \u03c6 direction: phi_Ga12\n\n  Numerical probe along null #0 (\u03b5=0.15): max|\u0394obs| = 2.384e-07\n  (should be \u226a 1 if truly a gauge/null direction; large \u2192 nonlinear or wrong tol)",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "ident_q2_local_power",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "identifiability.py",
+        "--observation",
+        "power"
+      ],
+      "returncode": 0,
+      "elapsed_s": 1.9746397279996017,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/identifiability/ident_q2_local_power.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/identifiability/ident_q2_local_power.stderr.log",
+      "stdout_tail": "\n========================================================================\nIdentifiability: power_superposition  (obs_dim=32, n_params=12, eta=1.0)\n========================================================================\nJacobian rank: 12/12  (obs dim 32, null dim 0, tol=0.0001)\nSingular values (top 8): [1.9487990140914917, 1.7874526977539062, 1.618898630142212, 1.4198349714279175, 1.072867512702942, 0.8566487431526184, 0.5293725728988647, 0.3944423794746399]\n\u2192 Locally fully identifiable: no null directions at this point.",
+      "stderr_tail": "",
+      "skipped": false
+    },
+    {
+      "name": "ident_q2_global_demo",
+      "command": [
+        "/home/pourushsharma/projects/.venv/bin/python",
+        "identifiability.py",
+        "--observation",
+        "power",
+        "--global-demo"
+      ],
+      "returncode": 0,
+      "elapsed_s": 13.189201365999907,
+      "stdout_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/identifiability/ident_q2_global_demo.stdout.log",
+      "stderr_file": "/home/pourushsharma/projects/pic/qf/PARAMS/ablation_runs/identifiability/ident_q2_global_demo.stderr.log",
+      "stdout_tail": "\nGlobal non-uniqueness demo: power_superposition  obs_dim=32\n(two cold-start gradient solves from different random initial angles)\n\n  pair 0: obs_RMSE=(2.81e-03, 3.43e-01)  mean|\u0394\u03b8|=2.717  mean|circular \u0394\u03c6|=1.805\n  pair 1: obs_RMSE=(2.13e-02, 1.41e-02)  mean|\u0394\u03b8|=1.573  mean|circular \u0394\u03c6|=1.374\n  pair 2: obs_RMSE=(9.89e-03, 2.13e-02)  mean|\u0394\u03b8|=2.056  mean|circular \u0394\u03c6|=1.359\n  \u2192 Large param spread at equal obs fidelity = gauge / branch non-uniqueness (Q2)",
+      "stderr_tail": "",
+      "skipped": false
+    }
+  ],
+  "metrics": {
+    "verify_convention": {
+      "convention_confirmed_5_5": true,
+      "looks_successful": false
+    },
+    "data_pipeline_selftest": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "mesh_forward_selftest": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "data_exact_lossless": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "data_exact_lossy": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "data_power_lossless": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "data_power_basis_lossless": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "data_power_lossy": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "data_power_quad_lossless": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "data_power_quad_lossy": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "train_exact_lossless": {
+      "best_val_obs_mse": 0.07133,
+      "network_only_fidelity": 0.52589,
+      "network_only_min": 0.01898,
+      "single_refine_fidelity": 0.98839,
+      "single_refine_min": 0.82047,
+      "multistart_fidelity": 0.99948,
+      "multistart_min": 0.98766,
+      "convention_confirmed_5_5": true,
+      "looks_successful": true
+    },
+    "train_exact_lossy": {
+      "best_val_obs_mse": 0.01016,
+      "network_only_fidelity": 0.56739,
+      "network_only_min": 0.02536,
+      "single_refine_fidelity": 0.99341,
+      "single_refine_min": 0.88894,
+      "multistart_fidelity": 0.99986,
+      "multistart_min": 0.99518,
+      "convention_confirmed_5_5": true,
+      "looks_successful": true
+    },
+    "train_power_lossless": {
+      "best_val_obs_mse": 0.00612,
+      "network_only_fidelity": 0.93838,
+      "network_only_min": 0.31901,
+      "single_refine_fidelity": 0.992,
+      "single_refine_min": 0.86665,
+      "multistart_fidelity": 0.9999,
+      "multistart_min": 0.9984,
+      "convention_confirmed_5_5": true,
+      "looks_successful": true
+    },
+    "train_power_basis_lossless": {
+      "best_val_obs_mse": 0.00113,
+      "network_only_fidelity": 0.98779,
+      "network_only_min": 0.76858,
+      "single_refine_fidelity": 0.99981,
+      "single_refine_min": 0.98888,
+      "multistart_fidelity": 1.0,
+      "multistart_min": 0.99982,
+      "convention_confirmed_5_5": true,
+      "looks_successful": true
+    },
+    "train_power_lossy": {
+      "best_val_obs_mse": 0.00024,
+      "network_only_fidelity": 0.90946,
+      "network_only_min": 0.65425,
+      "single_refine_fidelity": 0.99559,
+      "single_refine_min": 0.94955,
+      "multistart_fidelity": 0.99997,
+      "multistart_min": 0.99774,
+      "convention_confirmed_5_5": true,
+      "looks_successful": true
+    },
+    "train_power_quad_lossless": {
+      "best_val_obs_mse": 0.01242,
+      "network_only_fidelity": 0.88254,
+      "network_only_min": 0.49474,
+      "single_refine_fidelity": 0.99739,
+      "single_refine_min": 0.88893,
+      "multistart_fidelity": 0.99993,
+      "multistart_min": 0.9968,
+      "convention_confirmed_5_5": true,
+      "looks_successful": true
+    },
+    "train_power_quad_lossy": {
+      "best_val_obs_mse": 0.00038,
+      "network_only_fidelity": 0.85296,
+      "network_only_min": 0.45357,
+      "single_refine_fidelity": 0.99774,
+      "single_refine_min": 0.90874,
+      "multistart_fidelity": 0.99999,
+      "multistart_min": 0.99966,
+      "convention_confirmed_5_5": true,
+      "looks_successful": true
+    },
+    "infer_exact_lossless": {
+      "refined_obs_fidelity": 0.999998,
+      "matrix_fidelity": 0.999998,
+      "convention_confirmed_5_5": false,
+      "looks_successful": true
+    },
+    "infer_exact_lossy": {
+      "refined_obs_fidelity": 1.0,
+      "matrix_fidelity": 1.0,
+      "convention_confirmed_5_5": false,
+      "looks_successful": true
+    },
+    "infer_power_lossless": {
+      "refined_obs_fidelity": 1.0,
+      "convention_confirmed_5_5": false,
+      "looks_successful": true
+    },
+    "infer_power_basis_lossless": {
+      "refined_obs_fidelity": 1.0,
+      "convention_confirmed_5_5": false,
+      "looks_successful": true
+    },
+    "infer_power_lossy": {
+      "refined_obs_fidelity": 1.0,
+      "convention_confirmed_5_5": false,
+      "looks_successful": true
+    },
+    "infer_power_quad_lossless": {
+      "refined_obs_fidelity": 1.0,
+      "convention_confirmed_5_5": false,
+      "looks_successful": true
+    },
+    "infer_power_quad_lossy": {
+      "refined_obs_fidelity": 1.0,
+      "convention_confirmed_5_5": false,
+      "looks_successful": true
+    },
+    "ident_compare": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "ident_q1_basis_null": {
+      "rank": 9.0,
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "ident_q2_local_power": {
+      "rank": 12.0,
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    },
+    "ident_q2_global_demo": {
+      "convention_confirmed_5_5": false,
+      "looks_successful": false
+    }
+  }
+}

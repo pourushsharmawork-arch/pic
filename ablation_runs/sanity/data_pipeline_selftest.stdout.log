@@ -1,0 +1,3 @@
+train y: torch.Size([1800, 32])  val y: torch.Size([200, 32])
+sincos: torch.Size([1800, 32])  U: torch.complex64 torch.Size([1800, 4, 4])
+measurement_to_U round-trip max abs err (should be ~0): 0.0

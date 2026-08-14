@@ -1,0 +1,72 @@
+[data] loading /home/pourushsharma/projects/pic/qf/PARAMS/data/power_quad_lossy.npz
+[data] 5000 samples (power: 12 probes × 4 ports, obs_dim=48)
+
+[convention check] verifying assumed mesh convention against 5 real rows...
+
+=== sample 0 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.053682  confirmed                   reverse_apply
+    0.076312  differential_phi_signflip   forward
+    0.076312  differential_transpose      forward
+    0.080542  differential_phi_signflip   reverse_apply
+    0.080542  differential_transpose      reverse_apply
+
+=== sample 1 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.068076  differential                forward
+    0.072538  differential_transpose      reverse_apply
+    0.076781  single_port                 forward
+    0.080235  single_port                 reverse_apply
+    0.081333  confirmed                   reverse_apply
+
+=== sample 2 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.085752  differential_phi_signflip   forward
+    0.085752  differential_transpose      forward
+    0.093032  differential                forward
+    0.097218  single_port                 reverse_apply
+    0.141419  single_port                 forward
+
+=== sample 3 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.062861  differential_phi_signflip   forward
+    0.068608  differential_transpose      forward
+    0.082126  single_port                 forward
+    0.088433  single_port                 reverse_apply
+    0.097973  differential_phi_signflip   reverse_apply
+
+=== sample 4 ===
+    max|err|  mzi variant                 block order
+    0.000000  confirmed                   forward  <-- MATCH
+    0.068114  differential_phi_signflip   forward
+    0.076106  differential                forward
+    0.100506  single_port                 forward
+    0.121099  differential                reverse_apply
+    0.128335  differential_transpose      forward
+
+=== summary ===
+('confirmed', 'forward'): matched 5/5 samples
+
+-> Consistent match across all 5 samples: ('confirmed', 'forward')
+[data] train=4500  val=500  regime=power  eta=0.85  basis_only=False  quadrature=True  obs_dim=48  device=cpu
+[power/eta=0.85] epoch   0  train_loss=0.1765  val_obs_mse=0.00117  *best*
+[power/eta=0.85] epoch  10  train_loss=0.1013  val_obs_mse=0.00086  *best*
+[power/eta=0.85] epoch  20  train_loss=0.0810  val_obs_mse=0.00066
+[power/eta=0.85] epoch  30  train_loss=0.0718  val_obs_mse=0.00050
+[power/eta=0.85] epoch  40  train_loss=0.0702  val_obs_mse=0.00047
+[power/eta=0.85] epoch  50  train_loss=0.0649  val_obs_mse=0.00039  *best*
+[power/eta=0.85] epoch  59  train_loss=0.0639  val_obs_mse=0.00038  *best*
+restored best checkpoint (val_obs_mse=0.00038)
+
+[train] best val_obs_mse: 0.00038
+
+[eval on 200 held-out samples] observation fidelity (found params reproduce measured data):
+  network only          : 0.85296  (min 0.45357)
+  + single-start refine  : 0.99774  (min 0.90874)
+  + 200-start refine   : 0.99999  (min 0.99966)
+
+[saved] /home/pourushsharma/projects/pic/qf/PARAMS/checkpoints/power_quad_lossy.pt
