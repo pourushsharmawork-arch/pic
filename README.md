@@ -342,6 +342,19 @@ I1..I4 only), `--quadrature` (power: +quadrature probes), `--mode param_only`
 
 Bump `--epochs` to 100+ for a serious run. 15–30 is only for wiring tests.
 
+**Fixed-unitary basis-power demo**
+
+If you want one lossless unitary, repeated basis-probe powers from that same
+unitary, and then a superposition check on the learned reconstruction, run:
+
+```bash
+python fixed_unitary_basis_power_demo.py --epochs 80 --n_samples 1024
+```
+
+This script trains on `observation=power`, `basis_only=True`, `eta=1.0`, then
+rebuilds the model's unitary and compares it to the fixed target on a set of
+superposition probes.
+
 **Exact-field-only legacy path** (`run_pipeline.py`): still valid for
 `--mode physics` (lossless) and `--mode physics_lossy --eta …`. It cannot
 train on powers.
