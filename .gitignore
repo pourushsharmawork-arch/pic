@@ -4,4 +4,8 @@ models/
 *.ipynb
 *.pt
 models/
+.agent
+.codex
+ablation_runs
+checkpoints/
 

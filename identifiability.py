@@ -27,7 +27,7 @@ import argparse
 
 import torch
 
-from mesh_forward import BLOCK_LABELS
+from mesh_forward import BLOCK_LABELS, BLOCK_PAIRS, embed_block, make_power_probes, mzi_2x2
 from regime import Regime, simulate
 
 PARAM_NAMES_16 = (
@@ -74,6 +74,66 @@ def observation_jacobian(
     return J, names
 
 
+def basis_power_mesh_trace(
+    theta: torch.Tensor,
+    phi: torch.Tensor,
+    *,
+    delta: torch.Tensor | None = None,
+    probes: torch.Tensor | None = None,
+) -> list[dict]:
+    """Trace basis-probe fields through the 2121 mesh.
+
+    The returned list is in physical propagation order:
+        D -> Gb34 -> Gb12 -> Gb23 -> Ga34 -> Ga12 -> Ga23.
+
+    For each stage we record the complex field entering the active 2x2 block
+    on its two coupled modes, so the caller can see whether a given basis probe
+    reaches the block through one arm only or through a genuine two-arm
+    interference event.
+    """
+    if probes is None:
+        probes = make_power_probes(basis_only=True)
+    if delta is None:
+        delta = torch.zeros(4, device=theta.device, dtype=theta.dtype)
+
+    state = probes.to(device=theta.device, dtype=torch.complex64)
+    D_diag = torch.complex(torch.cos(delta), torch.sin(delta)).to(torch.complex64)
+    state = state * D_diag.unsqueeze(0)
+
+    trace: list[dict] = []
+    probe_labels = [f"I{k + 1}" for k in range(state.shape[0])]
+
+    for k in reversed(range(6)):
+        pair = BLOCK_PAIRS[k]
+        incoming = state[..., list(pair)]
+        block = mzi_2x2(theta[k], phi[k])
+        G = embed_block(block, pair)
+        outgoing = state @ G
+        trace.append(
+            {
+                "label": BLOCK_LABELS[k],
+                "pair": pair,
+                "probe_labels": probe_labels,
+                "incoming": incoming.detach(),
+                "incoming_abs": incoming.abs().detach(),
+                "outgoing": outgoing.detach(),
+            }
+        )
+        state = outgoing
+
+    return trace
+
+
+def _null_projection_by_axis(null_vectors: torch.Tensor, n_params: int) -> torch.Tensor:
+    if null_vectors.numel() == 0:
+        return torch.zeros(
+            n_params,
+            device=null_vectors.device,
+            dtype=null_vectors.dtype if null_vectors.numel() else torch.float32,
+        )
+    return torch.linalg.norm(null_vectors, dim=0)
+
+
 def analyze_identifiability(
     regime: Regime,
     theta: torch.Tensor | None = None,
@@ -93,19 +153,21 @@ def analyze_identifiability(
         delta = torch.rand(4, generator=g) * 2 * torch.pi
 
     J, names = observation_jacobian(regime, theta, phi, delta)
+    column_norms = torch.linalg.norm(J, dim=0)
     sv = torch.linalg.svdvals(J)
     rank = int((sv > sv_tol).sum().item())
     n_params = J.shape[1]
     n_obs = J.shape[0]
     U, S, Vh = torch.linalg.svd(J, full_matrices=True)
-    null_mask = S < sv_tol
-    null_dim = int(null_mask.sum().item()) if null_mask.any() else max(0, n_params - rank)
-    # right null vectors: rows of Vh with small singular values
-    null_vecs = Vh[S < sv_tol] if (S < sv_tol).any() else Vh[rank:]
+    null_dim = max(0, n_params - rank)
+    # right null vectors: the trailing rows of Vh span the null space.
+    null_vecs = Vh[rank:] if null_dim > 0 else Vh[:0]
+    null_projection = _null_projection_by_axis(null_vecs, n_params)
 
     return {
         "regime": regime,
         "J": J,
+        "column_norms": column_norms,
         "names": names,
         "singular_values": sv,
         "rank": rank,
@@ -113,6 +175,7 @@ def analyze_identifiability(
         "n_obs": n_obs,
         "null_dim": null_dim,
         "null_vectors": null_vecs,
+        "null_projection": null_projection,
         "theta": theta,
         "phi": phi,
         "delta": delta,
@@ -160,7 +223,7 @@ def print_report(result: dict, *, probe_null: int | None = None, eps: float = 0.
     print(f"{'=' * 72}")
     print(f"Jacobian rank: {r['rank']}/{r['n_params']}  "
           f"(obs dim {r['n_obs']}, null dim {r['null_dim']}, tol={r['sv_tol']})")
-    print(f"Singular values (top 8): {r['singular_values'][:8].tolist()}")
+    print(f"Singular values: {r['singular_values'].tolist()}")
     if r['null_dim'] == 0:
         print("→ Locally fully identifiable: no null directions at this point.")
     else:
@@ -192,6 +255,127 @@ def print_report(result: dict, *, probe_null: int | None = None, eps: float = 0.
         d_obs = (obs1 - obs0).abs().max().item()
         print(f"\n  Numerical probe along null #{k} (ε={eps}): max|Δobs| = {d_obs:.3e}")
         print("  (should be ≪ 1 if truly a gauge/null direction; large → nonlinear or wrong tol)")
+
+
+def print_structure_report(
+    result: dict,
+    *,
+    zero_abs_tol: float = 1e-8,
+    weak_ratio: float = 1e-2,
+):
+    """Extended diagnostic for the basis-only power experiment.
+
+    This prints:
+      1. per-parameter Jacobian column norms,
+      2. null-space participation of each axis,
+      3. a block-by-block field trace for the four basis probes.
+    """
+    r = result
+    regime = r["regime"]
+    if not (regime.observation == "power" and regime.basis_only):
+        raise ValueError("Structure diagnostics are only defined for power_basis_only.")
+
+    names = r["names"]
+    column_norms = r["column_norms"]
+    null_projection = r["null_projection"]
+    max_col = column_norms.max().clamp_min(1e-12)
+    rel_norms = column_norms / max_col
+
+    theta_norms = column_norms[:6]
+    phi_norms = column_norms[6:12]
+    theta_null = null_projection[:6]
+    phi_null = null_projection[6:12]
+
+    weak = [names[i] for i in range(len(names)) if rel_norms[i].item() <= weak_ratio]
+    zero = [names[i] for i in range(len(names)) if column_norms[i].item() <= zero_abs_tol]
+
+    print(f"\n{'=' * 72}")
+    print("Basis-only power structure diagnostic")
+    print(f"{'=' * 72}")
+    print(
+        "Observable space: 4 basis probes -> 16 powers; "
+        "the measured data are the entrywise magnitudes |U_ij|^2 of the 4x4 unitary."
+    )
+    print(
+        f"Jacobian rank: {r['rank']}/{r['n_params']}  "
+        f"(null dim {r['null_dim']}, tol={r['sv_tol']})"
+    )
+    print(
+        "Interpretation: the basis-only map lands on the 9D unistochastic manifold, "
+        "so a generic 12-parameter rectangular mesh must retain a 3D phase-gauge kernel."
+    )
+
+    print("\nPer-parameter sensitivities:")
+    print("  name                 ||J[:,i]||    rel      null-proj")
+    print("  -------------------------------------------------------")
+    for i, name in enumerate(names):
+        print(
+            f"  {name:<18} {column_norms[i].item():>10.3e}  "
+            f"{rel_norms[i].item():>7.3f}   {null_projection[i].item():>8.3f}"
+        )
+
+    print("\nAxis summary:")
+    print(
+        f"  theta norms: min {theta_norms.min().item():.3e}, max {theta_norms.max().item():.3e}, "
+        f"null projection max {theta_null.max().item():.3e}"
+    )
+    print(
+        f"  phi norms  : min {phi_norms.min().item():.3e}, max {phi_norms.max().item():.3e}, "
+        f"null projection min/max {phi_null.min().item():.3f}/{phi_null.max().item():.3f}"
+    )
+    if zero:
+        print(f"  exactly-zero columns: {', '.join(zero)}")
+    else:
+        print("  exactly-zero columns: none at this generic point")
+    if weak:
+        print(f"  weak columns (<= {weak_ratio:.1e} of max): {', '.join(weak)}")
+    else:
+        print(f"  weak columns (<= {weak_ratio:.1e} of max): none")
+
+    print("\nField propagation through the 2121 mesh:")
+    print("  Each line shows the two complex field magnitudes entering the active MZI.")
+    print("  A nonzero pair means that MZI phase can participate in interference.")
+    trace = basis_power_mesh_trace(r["theta"], r["phi"], delta=r["delta"])
+    for stage in trace:
+        pair = stage["pair"]
+        pair_label = f"{pair[0] + 1}{pair[1] + 1}"
+        incoming_abs = stage["incoming_abs"]
+        direct = []
+        for idx in range(incoming_abs.shape[0]):
+            a = incoming_abs[idx, 0].item()
+            b = incoming_abs[idx, 1].item()
+            if min(a, b) > zero_abs_tol:
+                direct.append(stage["probe_labels"][idx])
+        direct_str = ", ".join(direct) if direct else "none"
+        fields = ", ".join(
+            f"{stage['probe_labels'][idx]}:{incoming_abs[idx, 0].item():.3f}/{incoming_abs[idx, 1].item():.3f}"
+            for idx in range(incoming_abs.shape[0])
+        )
+        print(
+            f"  {stage['label']:<6} pair={pair_label}  direct-interference={direct_str:<13}  {fields}"
+        )
+
+    print("\nNull-space comparison:")
+    if r["null_dim"] == 0:
+        print("  No null directions at this point.")
+    else:
+        print(
+            "  The entire null space lives in the phi subspace: "
+            "theta axes have zero null-space projection, while all six phi axes participate."
+        )
+        for k, v in enumerate(r["null_vectors"]):
+            theta_part = torch.linalg.norm(v[:6]).item()
+            phi_part = torch.linalg.norm(v[6:12]).item()
+            print(
+                f"  null #{k}  ||theta||={theta_part:.3f}  ||phi||={phi_part:.3f}  "
+                f"{_format_linear_combo(v, names)}"
+            )
+            for hint in _phi_gauge_hints(v, names):
+                print(f"           ** {hint}")
+        print(
+            "  This is the key distinction: no single phi is permanently dark, but three independent "
+            "phi-combinations are gauge freedoms of the basis-only power readout."
+        )
 
 
 def compare_configurations(eta: float = 1.0, sv_tol: float = 1e-4, seed: int = 0):
@@ -281,11 +465,17 @@ def main():
     p.add_argument("--compare", action="store_true", help="table over all probe configs")
     p.add_argument("--global-demo", action="store_true",
                    help="two cold-start solves, same obs — shows Q2 global gauge")
+    p.add_argument("--structure", action="store_true",
+                   help="extended basis-only power diagnostic linking null space to mesh structure")
     p.add_argument("--observation", choices=["exact", "power"], default="power")
     p.add_argument("--eta", type=float, default=1.0)
     p.add_argument("--basis_only", action="store_true")
     p.add_argument("--quadrature", action="store_true")
     p.add_argument("--sv_tol", type=float, default=1e-4)
+    p.add_argument("--structure_weak_ratio", type=float, default=1e-2,
+                   help="relative threshold for marking a parameter as weak in structure mode")
+    p.add_argument("--structure_zero_tol", type=float, default=1e-8,
+                   help="absolute threshold for marking a column as exactly zero in structure mode")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--probe-null", type=int, default=None,
                    help="numerically move ε along null vector #k and print |Δobs|")
@@ -295,6 +485,9 @@ def main():
     if args.compare:
         compare_configurations(eta=args.eta, sv_tol=args.sv_tol, seed=args.seed)
         return
+
+    if args.structure and (args.observation != "power" or not args.basis_only):
+        p.error("--structure requires --observation power --basis_only")
 
     regime = Regime(
         observation=args.observation,
@@ -308,6 +501,12 @@ def main():
 
     result = analyze_identifiability(regime, sv_tol=args.sv_tol, seed=args.seed)
     print_report(result, probe_null=args.probe_null, eps=args.eps)
+    if args.structure:
+        print_structure_report(
+            result,
+            zero_abs_tol=args.structure_zero_tol,
+            weak_ratio=args.structure_weak_ratio,
+        )
 
 
 if __name__ == "__main__":

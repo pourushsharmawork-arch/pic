@@ -196,9 +196,10 @@ def train_model_regime(
     reg_weight: float = 0.01,
     seed: int = 0,
     verbose=True,
+    model_kwargs: dict | None = None,
 ):
     torch.manual_seed(seed)
-    model = make_model(regime)
+    model = make_model(regime, **(model_kwargs or {}))
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     n_train = train_data["obs"].shape[0]
     steps_per_epoch = max(1, n_train // batch_size)
