@@ -8,51 +8,25 @@ Dependencies
 NumPy is required.
 SciPy is required only if the numerical fallback is used.
 """
-from __future__ import annotations
 
-# import argparse
-# import csv
-# import json
 import math
-import os
-import tempfile
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Iterable, Sequence
-
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
-
-from . import misc
-from . import one_two_decomposition
-from . import two_one_decomposition
-from . import core
-
 
 FloatArray = NDArray[np.float64]
 ComplexArray = NDArray[np.complex128]
 
-MZI_NAMES: tuple[str, ...] = ("a23", "a12", "a34", "b23", "b12", "b34")
-MZI_INDEX = {name: index for index, name in enumerate(MZI_NAMES)}
-MZI_PAIRS: dict[str, tuple[int, int]] = {
-    "a23": (1, 2),
-    "a12": (0, 1),
-    "a34": (2, 3),
-    "b23": (1, 2),
-    "b12": (0, 1),
-    "b34": (2, 3),
-}
-ACTUATOR_NAMES: tuple[str, ...] = tuple(
-    [f"theta_{name}" for name in MZI_NAMES] + [f"phi_{name}" for name in MZI_NAMES]
-)
 
-N_MZI = len(MZI_NAMES)
-N_ACTUATORS = len(ACTUATOR_NAMES)
+from . import core 
+from . import misc
 
 
-def PIC_Topology(decomp='1212'):
-    if decomp=='1212':
+N_MZI = 6
+N_ACTUATORS = 12
+
+def PIC_Structure(decomp='1212'):
+    if decomp =='1212':
         mzi_names = ("a23", "a12", "a34", "b23", "b12", "b34")
         mzi_index = {name: index for index, name in enumerate(mzi_names)}
         mzi_pairs = {
@@ -81,125 +55,62 @@ def PIC_Topology(decomp='1212'):
         actuator_names = tuple(
             [f"theta_{name}" for name in mzi_names] + [f"phi_{name}" for name in mzi_names]
         )
+    else:
+        raise ValueError("Decomposition not feasible.")
 
-    return {MZI_NAMES : mzi_names,
-            MZI_INDEX : mzi_index,
-            MZI_PAIRS : mzi_pairs,
-            ACTUATOR_NAMES : actuator_names}
-
-
-def mzi_matrix(theta: float, phi: float) -> ComplexArray:
-    """
-    Alias for givens.
-    """
-    return misc.Givens(theta, phi)
+    return {'MZI_NAMES' : mzi_names,
+            'MZI_INDEX' : mzi_index,
+            'MZI_PAIRS' : mzi_pairs,
+            'ACTUATOR_NAMES' : actuator_names}
 
 
-def real_rotation(angle: float) -> ComplexArray:
-    """Return a small real parasitic two-mode rotation."""
-
-    c = math.cos(angle)
-    s = math.sin(angle)
-    return np.array([[c, -s], [s, c]], dtype=complex)
 
 
 def embed_two_mode(block: ComplexArray, pair: tuple[int, int]) -> ComplexArray:
     """Embed a 2 x 2 transfer block into four modes."""
-
-    block = np.asarray(block, dtype=complex)
-    if block.shape != (2, 2):
-        raise ValueError("block must have shape (2, 2)")
     i, j = pair
-    result = np.eye(4, dtype=complex)
-    result[np.ix_([i, j], [i, j])] = block
-    return result
+    
+    return misc.embed_T(4, i, j, block)
 
 
 def embedded_mzi(theta: float, phi: float, pair: tuple[int, int]) -> ComplexArray:
     """Embed an ideal MZI into the specified pair of four optical rails."""
 
-    return embed_two_mode(mzi_matrix(theta, phi), pair)
+    return embed_two_mode(misc.Givens(theta, phi), pair)
 
-
-def ideal_mirrored_u4(theta: FloatArray, phi: FloatArray) -> ComplexArray:
-    r"""Return the exact ideal mirrored U(4) matrix.
-
-    The multiplication order is
-
-        a23, (a12 direct_sum a34), b23, (b12 direct_sum b34).
-    """
-
-    theta = np.asarray(theta, dtype=float)
-    phi = np.asarray(phi, dtype=float)
-    if theta.shape != (N_MZI,) or phi.shape != (N_MZI,):
-        raise ValueError("theta and phi must each have shape (6,)")
-
-    matrices = {
-        name: embedded_mzi(theta[k], phi[k], MZI_PAIRS[name])
-        for k, name in enumerate(MZI_NAMES)
-    }
-    return (
-        matrices["a23"]
-        @ matrices["a12"]
-        @ matrices["a34"]
-        @ matrices["b23"]
-        @ matrices["b12"]
-        @ matrices["b34"]
-    )
-
-
-def ideal_single_port_powers(
-    theta: FloatArray,
-    phi: FloatArray,
-    input_port: int,
-) -> FloatArray:
-    """Return ideal output powers for one one-based input port."""
-
-    if input_port not in (1, 2, 3, 4):
-        raise ValueError("input_port must be one of 1, 2, 3, 4")
-    field = np.zeros(4, dtype=complex)
-    field[input_port - 1] = 1.0
-    output = field @ ideal_mirrored_u4(theta, phi)
-    return np.abs(output) ** 2
-
-
-def boundary_phase_matrix() -> FloatArray:
-    r"""Return C_boundary for the port-1/port-4 ideal boundary experiment.
-
-    C phi = (chi_L, chi_R), where
-
-        chi_L = phi_a12 - phi_b23 + phi_b12,
-        chi_R = phi_a34 - phi_b23 + phi_b34.
-    """
-
-    return np.array(
-        [
-            [0.0, 1.0, 0.0, -1.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0, -1.0, 0.0, 1.0],
-        ]
-    )
-
-
-def nominal_heater_positions_um() -> FloatArray:
+    
+def nominal_heater_positions_um(decomp='1212', x_sep=550, y_sep=150, intra_sep=22.5) -> FloatArray:
     r"""Return nominal planar coordinates for the twelve heaters.
 
     The first six rows are theta heaters and the final six rows are phi
     heaters.  The MZI centres follow the four optical layers.  The two heaters
     belonging to one MZI are displaced vertically by 45 micrometres.
     """
-
-    centres = np.array(
-        [
-            [0.0, 450.0],  # a23
-            [550.0, 150.0],  # a12
-            [550.0, 750.0],  # a34
-            [1100.0, 450.0],  # b23
-            [1650.0, 150.0],  # b12
-            [1650.0, 750.0],  # b34
-        ]
-    )
-    theta_positions = centres + np.array([0.0, -22.5])
-    phi_positions = centres + np.array([0.0, 22.5])
+    if decomp=='1212':
+        centres = np.array(
+            [
+                [0 * x_sep, 3 * y_sep],  # a23
+                [x_sep, y_sep],  # a12
+                [x_sep, 5 * y_sep],  # a34
+                [2 * x_sep, 3 * y_sep],  # b23
+                [3 * x_sep, y_sep],  # b12
+                [3 * x_sep, 5 * y_sep],  # b34
+            ]
+        )
+    elif decomp =='2121':
+        centres = np.array(
+            [
+                [0 * x_sep, 5 * y_sep],  # a12
+                [0 * x_sep, y_sep],  # a34
+                [x_sep, 3 * y_sep],  # a23
+                [2 * x_sep, 5 * y_sep],  # b12
+                [2 * x_sep, y_sep],  # b34
+                [3 * x_sep, 3 * y_sep],  # b23
+            ]
+        )
+     
+    theta_positions = centres + np.array([0.0, -intra_sep])
+    phi_positions = centres + np.array([0.0, intra_sep])
     return np.vstack([theta_positions, phi_positions])
 
 
@@ -355,7 +266,7 @@ def solve_steady_thermal_state(
     )
 
 
-@dataclass(frozen=True)
+@dataclass
 class ThermoOpticParameters:
     r"""Map the twelve thermal sites to six theta and six phi coordinates."""
 
@@ -388,9 +299,7 @@ def thermo_optic_coordinates(
     return unwrapped, misc.wrap_to_pi(unwrapped)
 
 
-
-
-@dataclass(frozen=True)
+@dataclass
 class OpticalImperfections:
     r"""Fixed fabrication and propagation imperfections.
 
@@ -404,26 +313,32 @@ class OpticalImperfections:
 
     pre_rotation_rad: FloatArray
     post_rotation_rad: FloatArray
-    arm_power_transmission: FloatArray
-    propagation_power_transmission: FloatArray
-    propagation_phase_rad: FloatArray
+    mzi_attenuation_coeffs: FloatArray
+    mmi_imbalance_coeffs: FloatArray
+    layer_wise_propagation_phase_rad: FloatArray
 
     def __post_init__(self) -> None:
         if np.asarray(self.pre_rotation_rad).shape != (N_MZI,):
             raise ValueError("pre_rotation_rad must have shape (6,)")
         if np.asarray(self.post_rotation_rad).shape != (N_MZI,):
             raise ValueError("post_rotation_rad must have shape (6,)")
-        if np.asarray(self.arm_power_transmission).shape != (N_MZI, 2):
-            raise ValueError("arm_power_transmission must have shape (6, 2)")
-        if np.asarray(self.propagation_power_transmission).shape != (3, 4):
-            raise ValueError("propagation_power_transmission must have shape (3, 4)")
-        if np.asarray(self.propagation_phase_rad).shape != (3, 4):
-            raise ValueError("propagation_phase_rad must have shape (3, 4)")
+        if np.asarray(self.mzi_attenuation_coeffs).shape != (N_MZI, 4):
+            raise ValueError("mzi_attenuation_coeffs must have shape (6, 4)")
+        if np.asarray(self.mmi_imbalance_coeffs).shape != (N_MZI, 2):
+            raise ValueError("mmi_imbalance_coeffs must have shape (6, 2)")
+        if np.asarray(self.layer_wise_propagation_phase_rad).shape != (3, 4):
+            raise ValueError("layer_wise_propagation_phase_rad must have shape (3, 4)")
         if np.any(
-            (np.asarray(self.arm_power_transmission) <= 0.0)
-            | (np.asarray(self.arm_power_transmission) > 1.0)
+            (np.asarray(self.mzi_attenuation_coeffs) <= 0.0)
+            | (np.asarray(self.mzi_attenuation_coeffs) > 1.0)
         ):
-            raise ValueError("arm power transmissions must lie in (0, 1]")
+            raise ValueError("MZI attenuation coefficients must lie in (0, 1]")
+
+        if np.any(
+            (np.asarray(self.mmi_imbalance_coeffs) <= 0.0)
+            | (np.asarray(self.mmi_imbalance_coeffs) > 1.0)
+        ):
+            raise ValueError("MMI imbalance coefficients must lie in (0, 1]")
 
 
 def physical_cell_matrix(
@@ -434,13 +349,12 @@ def physical_cell_matrix(
 ) -> ComplexArray:
     """Return the non-ideal 2 x 2 transfer matrix of one MZI."""
 
-    field_transmission = np.sqrt(imperfections.arm_power_transmission[mzi_index])
-    differential_loss = np.diag(field_transmission.astype(complex))
     return (
-        real_rotation(imperfections.pre_rotation_rad[mzi_index])
-        @ differential_loss
-        @ mzi_matrix(theta, phi)
-        @ real_rotation(imperfections.post_rotation_rad[mzi_index])
+        misc.real_rotation(imperfections.pre_rotation_rad[mzi_index])
+        @ core.lossy_U2mzi(theta, phi,
+                            imperfections.mzi_attenuation_coeffs[mzi_index],
+                            imperfections.mmi_imbalance_coeffs[mzi_index])
+        @ misc.real_rotation(imperfections.post_rotation_rad[mzi_index])
     )
 
 
@@ -449,16 +363,16 @@ def propagation_matrix(
     imperfections: OpticalImperfections,
 ) -> ComplexArray:
     """Return a four-mode diagonal propagation matrix after one mesh layer."""
+    
+    phase = imperfections.layer_wise_propagation_phase_rad[layer_index]
+    return np.diag(np.exp(1j * phase))
 
-    amplitude = np.sqrt(imperfections.propagation_power_transmission[layer_index])
-    phase = imperfections.propagation_phase_rad[layer_index]
-    return np.diag(amplitude * np.exp(1j * phase))
 
-
-def physical_scattering_matrix(
+def PIC_scattering_matrix(
     theta: FloatArray,
     phi: FloatArray,
     imperfections: OpticalImperfections,
+    decomp='1212',
 ) -> ComplexArray:
     """Return the generally non-unitary transfer matrix of the physical mesh."""
 
@@ -467,25 +381,56 @@ def physical_scattering_matrix(
     if theta.shape != (N_MZI,) or phi.shape != (N_MZI,):
         raise ValueError("theta and phi must each have shape (6,)")
 
-    cells = {}
-    for k, name in enumerate(MZI_NAMES):
-        local = physical_cell_matrix(theta[k], phi[k], k, imperfections)
-        cells[name] = embed_two_mode(local, MZI_PAIRS[name])
+    
+    
+    if decomp =='1212':
+        cells = {}
+        pic_structure = PIC_Structure(decomp)
+        MZI_NAMES = pic_structure['MZI_NAMES']
+        MZI_PAIRS = pic_structure['MZI_PAIRS']
 
-    return (
-        cells["a23"]
-        @ propagation_matrix(0, imperfections)
-        @ cells["a12"]
-        @ cells["a34"]
-        @ propagation_matrix(1, imperfections)
-        @ cells["b23"]
-        @ propagation_matrix(2, imperfections)
-        @ cells["b12"]
-        @ cells["b34"]
-    )
+        for k, name in enumerate(MZI_NAMES):
+            local = physical_cell_matrix(theta[k], phi[k], k, imperfections)
+            cells[name] = embed_two_mode(local, MZI_PAIRS[name])
+    
+        return (
+            cells["a23"]
+            @ propagation_matrix(0, imperfections)
+            @ cells["a12"]
+            @ cells["a34"]
+            @ propagation_matrix(1, imperfections)
+            @ cells["b23"]
+            @ propagation_matrix(2, imperfections)
+            @ cells["b12"]
+            @ cells["b34"]
+        )
+        
+    elif decomp=='2121':
+        cells = {}
+        pic_structure = PIC_Structure(decomp)
+        MZI_NAMES = pic_structure['MZI_NAMES']
+        MZI_PAIRS = pic_structure['MZI_PAIRS']
+
+        for k, name in enumerate(MZI_NAMES):
+            local = physical_cell_matrix(theta[k], phi[k], k, imperfections)
+            cells[name] = embed_two_mode(local, MZI_PAIRS[name])
+    
+        return (
+            cells["a12"] @ cells["a34"]
+            @ propagation_matrix(0, imperfections)
+            @ cells["a23"]
+            @ propagation_matrix(1, imperfections)
+            @ cells["b12"] @ cells["b34"]
+            @ propagation_matrix(2, imperfections)
+            @ cells["b23"]
+        )
+    else :
+        raise ValueError("Decomposition is not feasible.")
 
 
-@dataclass(frozen=True)
+
+
+@dataclass
 class SourceParameters:
     """Classical single-port calibration source."""
 
@@ -494,7 +439,7 @@ class SourceParameters:
     additive_field_noise_std: float
 
 
-@dataclass(frozen=True)
+@dataclass
 class DetectorParameters:
     """Four independent power-detector channels."""
 
@@ -520,25 +465,118 @@ class DetectorParameters:
 @dataclass
 class SteadyStateU4Chip:
     """Complete hidden steady-state virtual chip."""
-
+    decomp:str
     electrothermal: ElectroThermalParameters
     thermo_optic: ThermoOpticParameters
     optical: OpticalImperfections
     source: SourceParameters
     detectors: DetectorParameters
 
+
     @classmethod
-    def random(
+    def ideal(
         cls,
         seed: int = 20260727,
         *,
-        thermal_crosstalk_fraction: float = 0.11,
+        decomp='1212',
+        thermal_crosstalk_fraction: float = 0.0,
+        detector_noise_scale: float = 0.0,
+    ) -> "SteadyStateU4Chip":
+        """Construct one reproducible but fabrication-imperfect virtual device."""
+        
+        
+        rng = np.random.default_rng(seed)
+        positions = nominal_heater_positions_um(decomp)
+    
+        self_thermal = rng.normal(1750.0, 0.0, N_ACTUATORS)
+        thermal_green = thermal_green_matrix(
+            positions,
+            self_thermal,
+            thermal_crosstalk_fraction,
+            decay_length_um=310.0,
+        )
+        electrothermal = ElectroThermalParameters(
+            ambient_temperature_k=298.15,
+            resistance_0_ohm=rng.normal(150, 0.0, N_ACTUATORS),
+            resistance_tcr_per_k=rng.normal(2.5e-5, 0.0, N_ACTUATORS),
+            voltage_max_v=rng.normal(9, 0.0, N_ACTUATORS),
+            thermal_green_k_per_w=thermal_green,
+            positions_um=positions,
+        )
+
+        wavelength_um = 1.550
+        dn_eff_d_t = 1.85e-4
+        heater_lengths_um = np.concatenate(
+            [
+                rng.normal(1050.0, 0.0, N_MZI),
+                rng.normal(1050.0, 0.0, N_MZI),
+            ]
+        )
+        optical_overlap = np.concatenate(
+            [
+                rng.normal(0.34, 0.0, N_MZI),
+                rng.normal(0.34, 0.0, N_MZI),
+            ]
+        )
+
+        ##############################################################
+        linear = (
+            2.0
+            * np.pi
+            / wavelength_um
+            * dn_eff_d_t
+            * heater_lengths_um
+            * optical_overlap
+        )
+        linear *= rng.normal(1.0, 0.0, N_ACTUATORS)
+        quadratic = linear * rng.normal(8.0e-4, 0.0, N_ACTUATORS)
+        ##############################################################
+
+        thermo_optic = ThermoOpticParameters(
+            offset_rad=rng.uniform(0, 0, N_ACTUATORS),
+            linear_rad_per_k=linear,
+            quadratic_rad_per_k2=quadratic,
+        )
+
+        optical = OpticalImperfections(
+            pre_rotation_rad=rng.normal(0.0, 0.0, N_MZI),
+            post_rotation_rad=rng.normal(0.0, 0.0, N_MZI),
+            mzi_attenuation_coeffs= rng.normal(1, 0.0, size=(N_MZI, 4)),
+            mmi_imbalance_coeffs=rng.normal(0.5, 0.0, size=(N_MZI, 2)),
+            layer_wise_propagation_phase_rad=rng.uniform(0.0, 0.0, size=(3, 4)),
+        )
+
+        source = SourceParameters(
+            mean_power_w=1.0e-3,
+            relative_intensity_noise=2.0e-3 * detector_noise_scale,
+            additive_field_noise_std=2.0e-4 * detector_noise_scale,
+        )
+        detectors = DetectorParameters(
+            gain=rng.normal(1.0, 0.0, 4),
+            dark_offset_w=np.clip(
+                rng.normal(2.5e-7, 0.0, 4),
+                0.0,
+                None,
+            ),
+            read_noise_std_w=np.full(4, 2.5e-7 * detector_noise_scale),
+            photons_per_watt_sample=2.0e9 / max(detector_noise_scale, 1.0e-9),
+            adc_step_w=1.0e-8 * detector_noise_scale,
+        )
+        return cls(decomp, electrothermal, thermo_optic, optical, source, detectors)
+        
+    @classmethod
+    def default(
+        cls,
+        seed: int = 20260727,
+        *,
+        decomp='1212',
+        thermal_crosstalk_fraction: float = 0.4,
         detector_noise_scale: float = 1.0,
     ) -> "SteadyStateU4Chip":
         """Construct one reproducible but fabrication-imperfect virtual device."""
-
+    
         rng = np.random.default_rng(seed)
-        positions = nominal_heater_positions_um()
+        positions = nominal_heater_positions_um(decomp)
         positions = positions + rng.normal(0.0, 5.0, size=positions.shape)
 
         self_thermal = rng.normal(1750.0, 120.0, N_ACTUATORS)
@@ -551,7 +589,7 @@ class SteadyStateU4Chip:
         electrothermal = ElectroThermalParameters(
             ambient_temperature_k=298.15,
             resistance_0_ohm=rng.normal(150, 8.5, N_ACTUATORS),
-            resistance_tcr_per_k=rng.normal(2.5e-5, 5e-6, N_ACTUATORS),
+            resistance_tcr_per_k=rng.normal(2.5e-3, 5e-6, N_ACTUATORS),
             voltage_max_v=rng.normal(9, 0.4, N_ACTUATORS),
             thermal_green_k_per_w=thermal_green,
             positions_um=positions,
@@ -594,17 +632,17 @@ class SteadyStateU4Chip:
         optical = OpticalImperfections(
             pre_rotation_rad=rng.normal(0.0, 0.0, N_MZI),
             post_rotation_rad=rng.normal(0.0, 0.0, N_MZI),
-            arm_power_transmission=np.clip(
-                rng.normal(0.986, 0.004, size=(N_MZI, 2)),
-                0.96,
-                0.9995,
+            mzi_attenuation_coeffs=np.clip(
+                rng.normal(0.96, 0.004, size=(N_MZI, 4)),
+                0.0,
+                1.0,
             ),
-            propagation_power_transmission=np.clip(
-                rng.normal(0.992, 0.002, size=(3, 4)),
-                0.98,
-                0.9995,
+            mmi_imbalance_coeffs=np.clip(
+                rng.normal(0.5, 0.02, size=(N_MZI, 2)),
+                0.0,
+                1.0,
             ),
-            propagation_phase_rad=rng.uniform(-0.10, 0.10, size=(3, 4)),
+            layer_wise_propagation_phase_rad=rng.uniform(-0.10, 0.10, size=(3, 4)),
         )
 
         source = SourceParameters(
@@ -623,7 +661,7 @@ class SteadyStateU4Chip:
             photons_per_watt_sample=2.0e9 / max(detector_noise_scale, 1.0e-9),
             adc_step_w=1.0e-8 * detector_noise_scale,
         )
-        return cls(electrothermal, thermo_optic, optical, source, detectors)
+        return cls(decomp, electrothermal, thermo_optic, optical, source, detectors)
 
     def steady_state(self, controls: FloatArray) -> ThermalState:
         """Solve the electro-thermal state for one twelve-control vector."""
@@ -644,11 +682,22 @@ class SteadyStateU4Chip:
         """Return the physical 4 x 4 optical transfer matrix."""
 
         _, wrapped, _ = self.physical_coordinates(controls)
-        return physical_scattering_matrix(
+        return PIC_scattering_matrix(
             wrapped[:N_MZI],
             wrapped[N_MZI:],
             self.optical,
         )
+
+    def propagate_state(self, input_signal, controls:FloatArray, detect=False):
+        M = self.scattering_matrix(controls)
+        output_signal = input_signal @ M
+
+        if detect==False:
+            output = output_signal
+        else:
+            output = self._detect(np.abs(output_signal)**2)
+
+        return output
 
     def noiseless_output_power(
         self,
@@ -719,31 +768,34 @@ class SteadyStateU4Chip:
             )
         return measured
 
-    def measure_once(
-        self,
-        controls: FloatArray,
-        input_port: int,
-        rng: np.random.Generator,
-    ) -> FloatArray:
-        """Perform one noisy optical measurement with one illuminated input."""
+    # def measure_once(
+    #     self,
+    #     controls: FloatArray,
+    #     input_port: int,
+    #     rng: np.random.Generator,
+    # ) -> FloatArray:
+    #     """Perform one noisy optical measurement with one illuminated input."""
 
-        source_scale = max(
-            0.0,
-            1.0 + rng.normal(0.0, self.source.relative_intensity_noise),
-        )
-        input_power = self.source.mean_power_w * source_scale
-        field = np.zeros(4, dtype=complex)
-        field[input_port - 1] = math.sqrt(input_power)
-        if self.source.additive_field_noise_std > 0.0:
-            field[input_port - 1] *= 1.0 + (
-                rng.normal(0.0, self.source.additive_field_noise_std)
-                + 1j * rng.normal(0.0, self.source.additive_field_noise_std)
-            )
-        output = field @ self.scattering_matrix(controls)
-        return self._detect(np.abs(output) ** 2, rng)
+    #     source_scale = max(
+    #         0.0,
+    #         1.0 + rng.normal(0.0, self.source.relative_intensity_noise),
+    #     )
+    #     input_power = self.source.mean_power_w * source_scale
+    #     field = np.zeros(4, dtype=complex)
+    #     field[input_port - 1] = math.sqrt(input_power)
+    #     if self.source.additive_field_noise_std > 0.0:
+    #         field[input_port - 1] *= 1.0 + (
+    #             rng.normal(0.0, self.source.additive_field_noise_std)
+    #             + 1j * rng.normal(0.0, self.source.additive_field_noise_std)
+    #         )
+    #     output = field @ self.scattering_matrix(controls)
+    #     return self._detect(np.abs(output) ** 2, rng)
 
     def parameter_expressions(self) -> dict[str, str]:
         """Return the twelve explicit numerical thermo-optic response expressions."""
+
+        struc = PIC_Structure(self.decomp)
+        ACTUATOR_NAMES = struc['ACTUATOR_NAMES']
 
         expressions: dict[str, str] = {}
         for h, name in enumerate(ACTUATOR_NAMES):

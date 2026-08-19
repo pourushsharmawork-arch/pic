@@ -1,18 +1,49 @@
 """
-two_one_decomposition.py
-========================
+two_one_hardware_decomposition.py
+=================================
 
-Robust decomposition of an arbitrary numerical 4 x 4 unitary into
+Robust decomposition of an arbitrary numerical 4 x 4 unitary into the
+physical 2-1-2-1 MZI architecture
 
     U = Ta12 @ Ta34 @ Ta23 @ Tb12 @ Tb34 @ Tb23 @ D,
 
-where each T is an embedded two-parameter MZI/Givens cell
+where cells on disjoint mode pairs form each two-MZI layer.
 
-    T(theta, phi)
-      = [[exp(-i phi) cos(theta), -sin(theta)],
-         [sin(theta),             exp(i phi) cos(theta)]],
+The historical T labels are retained for API compatibility; every returned T
+matrix is the physical H matrix defined below.
 
-and D is diagonal.
+The code assumes row-vector propagation,
+
+    field_out = field_in @ U.
+
+For two identical balanced beam splitters
+
+    B = (1/sqrt(2)) [[1, i], [i, 1]],
+
+and an upper-arm phase shifter
+
+    P(alpha) = diag(exp(i alpha), 1),
+
+the physical left-to-right sequence
+
+    P(phi) -> B -> P(theta) -> B
+
+is represented by the exact row-vector transfer matrix
+
+    H(theta, phi) = P(phi) @ B @ P(theta) @ B
+
+                  = i exp(i theta/2)
+                    [[exp(i phi) sin(theta/2),
+                      exp(i phi) cos(theta/2)],
+                     [cos(theta/2), -sin(theta/2)]],
+
+and D is diagonal.  The factor i exp(i theta/2) is retained because it
+becomes a relative phase after embedding the cell in four modes.
+
+The elimination is performed internally with the original SU(2) Givens
+coordinates and then compiled exactly into physical H cells, with all induced
+diagonal phases absorbed into D.  The returned ``theta`` and ``phi`` values are
+therefore directly programmable hardware phase shifts.
 
 The routine handles both dense and sparse unitaries.  The important difference
 from a no-pivot elimination is that an exact zero-zero pivot is treated as an
@@ -57,6 +88,39 @@ _ELIMINATION_PLAN = (
 def wrap_phase(phi: float) -> float:
     """Wrap an angle to [-pi, pi)."""
     return misc.wrap_to_pi(phi)
+
+
+def hardware_mzi_local(theta: float, phi: float) -> np.ndarray:
+    """
+    Return the exact 2 x 2 transfer matrix of the laboratory MZI.
+
+    For a row-vector field, the physical sequence is
+
+        H(theta, phi) = P(phi) @ B @ P(theta) @ B,
+
+    with ``B = [[1, i], [i, 1]] / sqrt(2)`` and
+    ``P(alpha) = diag(exp(i alpha), 1)``.
+
+    No two-mode global phase is removed.
+    """
+    half_theta = 0.5 * float(theta)
+    phi = float(phi)
+    s = np.sin(half_theta)
+    c = np.cos(half_theta)
+    prefactor = 1j * np.exp(1j * half_theta)
+
+    return prefactor * np.array(
+        [
+            [np.exp(1j * phi) * s, np.exp(1j * phi) * c],
+            [c, -s],
+        ],
+        dtype=complex,
+    )
+
+
+def _wrap_hardware_theta(theta: float) -> float:
+    """Wrap a physical internal phase to [0, 2*pi)."""
+    return float(np.mod(theta, 2.0 * np.pi))
 
 
 
@@ -155,6 +219,83 @@ def zero_first_params(
     return float(theta), wrap_phase(float(phi))
 
 
+def _compile_givens_chain_to_hardware(
+    givens_blocks: list[dict[str, Any]],
+    D_givens: np.ndarray,
+) -> tuple[list[dict[str, Any]], np.ndarray, np.ndarray]:
+    """
+    Compile an SU(2)-Givens chain into exact row-vector hardware MZIs.
+
+    For the current two-mode diagonal gauge
+
+        A = diag(exp(i a), exp(i b)),
+
+    and mathematical block
+
+        T(t, p) = [[exp(-i p) cos(t), -sin(t)],
+                   [sin(t), exp(i p) cos(t)]],
+
+    the compiler uses the exact identity
+
+        A @ T(t, p) = H(Theta, Phi) @ A_new,
+
+    with
+
+        Theta = pi - 2 t,
+        Phi   = a - b - p,
+        a_new = b + t - pi,
+        b_new = b + p + t.
+
+    Repeating this identity moves the complete phase gauge to the final
+    diagonal matrix D.
+    """
+    D_givens = np.asarray(D_givens, dtype=complex)
+
+    if D_givens.shape != (4, 4):
+        raise ValueError("D_givens must be a 4 x 4 matrix.")
+
+    gauge = np.zeros(4, dtype=float)
+    hardware_blocks: list[dict[str, Any]] = []
+
+    for block in givens_blocks:
+        i = int(block["modes"][0]) - 1
+        j = int(block["modes"][1]) - 1
+        t = float(block["theta"])
+        p = float(block["phi"])
+        a = float(gauge[i])
+        b = float(gauge[j])
+
+        theta_hardware = _wrap_hardware_theta(np.pi - 2.0 * t)
+        phi_hardware = wrap_phase(a - b - p)
+        H_full = misc.embed_T(
+            4,
+            i,
+            j,
+            hardware_mzi_local(theta_hardware, phi_hardware),
+        )
+
+        hardware_blocks.append(
+            {
+                "label": str(block["label"]),
+                "modes": (i + 1, j + 1),
+                "theta": theta_hardware,
+                "phi": phi_hardware,
+                "T_full": H_full,
+                "givens_theta": t,
+                "givens_phi": wrap_phase(p),
+            }
+        )
+
+        # Both assignments must use the old value b.
+        gauge[i] = wrap_phase(b + t - np.pi)
+        gauge[j] = wrap_phase(b + p + t)
+
+    D_gauge = np.diag(np.exp(1j * gauge))
+    D_hardware = D_gauge @ D_givens
+
+    return hardware_blocks, D_hardware, gauge
+
+
 def reconstruct_from_rectangular(
     blocks: list[dict[str, Any]],
     D: np.ndarray,
@@ -175,6 +316,19 @@ def reconstruct_from_rectangular(
         U_rec = U_rec @ block["T_full"]
 
     return U_rec @ D
+
+
+def _diagonalized_remainder(
+    U: np.ndarray,
+    blocks: list[dict[str, Any]],
+) -> np.ndarray:
+    """Return H6^dagger ... H1^dagger U for blocks in physical order."""
+    W = np.asarray(U, dtype=complex).copy()
+
+    for block in blocks:
+        W = np.asarray(block["T_full"], dtype=complex).conj().T @ W
+
+    return W
 
 
 def decomposition_diagnostics(
@@ -427,7 +581,7 @@ def decompose_U4_rectangular(
     return_diagnostics: bool = False,
 ):
     """
-    Decompose an arbitrary numerical 4 x 4 unitary as
+    Decompose an arbitrary numerical 4 x 4 unitary into physical MZIs as
 
         U = Ta12 Ta34 Ta23 Tb12 Tb34 Tb23 D.
 
@@ -459,11 +613,14 @@ def decompose_U4_rectangular(
     Returns
     -------
     blocks:
-        Six dictionaries containing labels, one-indexed modes, theta, phi, and
-        the embedded 4 x 4 cell.
+        Six dictionaries containing labels, one-indexed modes, the directly
+        programmable hardware phases ``theta`` and ``phi``, and the embedded
+        exact 4 x 4 hardware cell.  ``givens_theta`` and ``givens_phi`` retain
+        the intermediate mathematical coordinates for traceability.
 
     D:
-        The final diagonal matrix.
+        The final diagonal phase matrix after all compiler-induced phases have
+        been absorbed into it.
 
     W:
         The matrix obtained after left-multiplying U by the six cell adjoints.
@@ -634,6 +791,11 @@ def decompose_U4_rectangular(
 
         used_numerical_fallback = True
 
+    # Compile the mathematical SU(2) Givens cells into exact laboratory MZIs.
+    # The returned block theta/phi values are physical phase-shifter settings.
+    blocks, D, compiler_gauge = _compile_givens_chain_to_hardware(blocks, D)
+    W = _diagonalized_remainder(U, blocks)
+
     U_reconstructed = reconstruct_from_rectangular(blocks, D)
     reconstruction_error = float(
         np.linalg.norm(U - U_reconstructed, ord="fro")
@@ -660,6 +822,7 @@ def decompose_U4_rectangular(
         "nodes_visited": nodes_visited,
         "used_numerical_fallback": used_numerical_fallback,
         "fallback_residual": float(fallback_residual),
+        "compiler_output_phase_gauge": compiler_gauge.copy(),
     }
 
     if return_diagnostics:
@@ -811,8 +974,10 @@ if __name__ == "__main__":
         print(
             f"{block['label']}: "
             f"modes={block['modes']}, "
-            f"theta={block['theta']:.12f}, "
-            f"phi={block['phi']:.12f}"
+            f"theta_hardware={block['theta']:.12f}, "
+            f"phi_hardware={block['phi']:.12f}, "
+            f"theta_givens={block['givens_theta']:.12f}, "
+            f"phi_givens={block['givens_phi']:.12f}"
         )
 
     print("\nD =")

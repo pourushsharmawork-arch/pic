@@ -6,8 +6,8 @@ from scipy.linalg import block_diag
 from scipy.optimize import least_squares
 np.set_printoptions(precision=4, suppress=True)
 
-from . import one_two_decomposition
-from . import two_one_decomposition
+from . import one_two_hardware_decomposition
+from . import two_one_hardware_decomposition
 from . import misc
 
 ##################################################################
@@ -24,6 +24,8 @@ def U_PS(α, β):
     ], dtype=complex)
 
 
+
+
 def U_BS(θ, ϕ=0):
     """
     Beam splitter with i-reflection convention:
@@ -35,28 +37,21 @@ def U_BS(θ, ϕ=0):
         [1j * np.exp(1j*ϕ) * np.sin(θ), np.cos(θ)]
     ], dtype=complex)
 
-def U2mzi(θ, α, β, χ=0):
-    """
-    Your U(2) decomposition:
-        U_PS(alpha + theta - pi, beta + theta - pi/2)
-        U_BS(pi/4)
-        U_PS(pi - 2 theta, 0)
-        U_BS(pi/4)
-        U_PS(gamma, delta + pi/2)
-    """
-    return np.exp(1j * χ) * ( 
-        U_PS(α + β + θ - np.pi, θ - np.pi / 2)
-        @ U_BS(np.pi / 4)
-        @ U_PS(np.pi - 2 * θ, 0)
-        @ U_BS(np.pi / 4)
-        @ U_PS(-β, np.pi / 2 - α)
-    )
 
+def U2mmi(ξ = 0.5):
+    return np.array([
+        [np.sqrt(ξ), 1j * np.sqrt(1-ξ)],
+        [1j * np.sqrt(1-ξ), np.sqrt(ξ)]
+    ])
+
+def U2mzi(θ, ϕ,  ξlist=[0.5, 0.5]):
+
+    return U_PS(ϕ, 0) @ U2mmi(ξlist[0]) @ U_PS(θ, 0) @ U2mmi(ξlist[1]) 
 
 def loss_matrix(η1, η2):
     """
     Diagonal amplitude-loss matrix.
-    eta1, eta2 are intensity efficiencies.
+    eta1^2, eta2^2 are intensity efficiencies.
     """
     if not (0 <= η1 <= 1 and 0 <= η2 <= 1):
         raise ValueError("Efficiencies eta1 and eta2 must lie in [0,1].")
@@ -64,11 +59,11 @@ def loss_matrix(η1, η2):
     return np.diag([η1, η2]).astype(float)
 
 
-def lossy_U2mzi(θ, α, β, χ, ηlist):
+def lossy_U2mzi(θ, ϕ, ηlist, ξlist):
     """
     Effective non-unitary 2x2 transfer matrix with input and output losses.
     """
-    U = U2mzi(θ, α, β, χ)
+    U = U2mzi(θ, ϕ, ξlist)
 
     L_in = loss_matrix(ηlist[0], ηlist[1])
     L_out = loss_matrix(ηlist[2], ηlist[3])
@@ -100,7 +95,7 @@ def decompose_U4_rectangular(
 
 
     if decomp == '1212' :
-        blocks, D, W = one_two_decomposition.decompose_U4_rectangular(U = U,
+        blocks, D, W = one_two_hardware_decomposition.decompose_U4_rectangular(U = U,
                                             tol = tol,
                                             max_search_nodes = max_search_nodes,
                                             numerical_fallback = numerical_fallback,
@@ -109,7 +104,7 @@ def decompose_U4_rectangular(
                                             return_diagnostics = return_diagnostics) 
 
     elif decomp == "2121" :
-        blocks, D, W = two_one_decomposition.decompose_U4_rectangular(U = U,
+        blocks, D, W = two_one_hardware_decomposition.decompose_U4_rectangular(U = U,
                                                     tol = tol,
                                                     max_search_nodes = max_search_nodes,
                                                     numerical_fallback = numerical_fallback,
@@ -187,7 +182,7 @@ def print_decomposition_diagnostics(U_target, decomp='1212'):
 # Decompose U(4) to Quanfluence architecture, put losses in each MZI and 
 # then find the effective matrix of Quanfluence architecture.  
 ###################################################################################
-def lossy_U4_circuit(U, losses, decomp='1212'):
+def lossy_U4_circuit(U, losses, mmi_imbalance, decomp='1212'):
 
     blocks, D, W = decompose_U4_rectangular(U, decomp=decomp)
 
@@ -201,7 +196,7 @@ def lossy_U4_circuit(U, losses, decomp='1212'):
 
     x = np.concatenate([theta_list, phi_list, D_list])
 
-    M = build_u4_row_mesh(x, losses, decomp)
+    M = build_u4_row_mesh(x, losses, mmi_imbalance, decomp)
 
     return M
 
@@ -233,7 +228,7 @@ def best_scalar(M, target):
 
 
 
-def build_u4_row_mesh(x, losses=np.ones((6, 4)), decomp='1212'):
+def build_u4_row_mesh(x, losses, mmi_imbalance, decomp='1212'):
     """
     Build the 4x4 row-action transfer matrix of the rectangular mesh.
 
@@ -250,9 +245,13 @@ def build_u4_row_mesh(x, losses=np.ones((6, 4)), decomp='1212'):
     because the input is a row vector.
     """
     eta = losses
+    xi = mmi_imbalance
     if eta.shape != (6, 4):
         raise ValueError(f"Shape of losses is {eta.shape} not (6, 4)")
 
+    if xi.shape != (6, 2):
+        raise ValueError(f"Shape of rotation losses is {xi.shape} not (12, 2)")
+    
     if x.shape != (16, ):
         raise ValueError(f"Shape of parameters is {x.shape} not (16, )")
 
@@ -265,49 +264,49 @@ def build_u4_row_mesh(x, losses=np.ones((6, 4)), decomp='1212'):
     if decomp=='1212':
         L1 = block_diag(
             np.eye(1),
-            lossy_U2mzi(θ=theta_list[0], α=-phi_list[0], β=np.pi / 2, χ=0, ηlist=eta[0]),
+            lossy_U2mzi(θ=theta_list[0], ϕ=phi_list[0], ηlist=eta[0], ξlist=xi[0]),
             np.eye(1),
         )
 
         L2 = block_diag(
-            lossy_U2mzi(θ=theta_list[1], α=-phi_list[1], β=np.pi / 2, χ=0, ηlist=eta[1]),
-            lossy_U2mzi(θ=theta_list[2], α=-phi_list[2], β=np.pi / 2, χ=0, ηlist=eta[2]),
+            lossy_U2mzi(θ=theta_list[1], ϕ=phi_list[1], ηlist=eta[1], ξlist=xi[1]),
+            lossy_U2mzi(θ=theta_list[2], ϕ=phi_list[2], ηlist=eta[2], ξlist=xi[2]),
         )
 
         L3 = block_diag(
             np.eye(1),
-            lossy_U2mzi(θ=theta_list[3], α=-phi_list[3], β=np.pi / 2, χ=0, ηlist=eta[3]),
+            lossy_U2mzi(θ=theta_list[3], ϕ=phi_list[3], ηlist=eta[3], ξlist=xi[3]),
             np.eye(1),
         )
 
         L4 = block_diag(
-            lossy_U2mzi(θ=theta_list[4], α=-phi_list[4], β=np.pi / 2, χ=0, ηlist=eta[4]),
-            lossy_U2mzi(θ=theta_list[5], α=-phi_list[5], β=np.pi / 2, χ=0, ηlist=eta[5]),
+            lossy_U2mzi(θ=theta_list[4], ϕ=phi_list[4], ηlist=eta[4], ξlist=xi[4]),
+            lossy_U2mzi(θ=theta_list[5], ϕ=phi_list[5], ηlist=eta[5], ξlist=xi[5]),
         )
 
         M = L1 @ L2 @ L3 @ L4 
 
     elif decomp == '2121':
         L1 = block_diag(
-                    lossy_U2mzi(θ=theta_list[0], α=-phi_list[0], β=np.pi / 2, χ=0, ηlist=eta[0]),
-                    lossy_U2mzi(θ=theta_list[1], α=-phi_list[1], β=np.pi / 2, χ=0, ηlist=eta[1]),
+                    lossy_U2mzi(θ=theta_list[0], ϕ=phi_list[0], ηlist=eta[0], ξlist=xi[0]),
+                    lossy_U2mzi(θ=theta_list[1], ϕ=phi_list[1], ηlist=eta[1], ξlist=xi[1]),
                 )
         
         L2 = block_diag(
             np.eye(1),
-            lossy_U2mzi(θ=theta_list[2], α=-phi_list[2], β=np.pi / 2, χ=0, ηlist=eta[2]),
+            lossy_U2mzi(θ=theta_list[2], ϕ=phi_list[2], ηlist=eta[2], ξlist=xi[2]),
             np.eye(1),
         )
 
         L3 = block_diag(
-                    lossy_U2mzi(θ=theta_list[3], α=-phi_list[3], β=np.pi / 2, χ=0, ηlist=eta[3]),
-                    lossy_U2mzi(θ=theta_list[4], α=-phi_list[4], β=np.pi / 2, χ=0, ηlist=eta[4]),
+                    lossy_U2mzi(θ=theta_list[3], ϕ=phi_list[3], ηlist=eta[3], ξlist=xi[3]),
+                    lossy_U2mzi(θ=theta_list[4], ϕ=phi_list[4], ηlist=eta[4], ξlist=xi[4]),
                 )
         
 
         L4 = block_diag(
             np.eye(1),
-            lossy_U2mzi(θ=theta_list[5], α=-phi_list[5], β=np.pi / 2, χ=0, ηlist=eta[5]),
+            lossy_U2mzi(θ=theta_list[5], ϕ=phi_list[5], ηlist=eta[5], ξlist=xi[5]),
             np.eye(1),
         )
 
@@ -359,7 +358,7 @@ def transfer_metrics(M, target):
 # ---------------------------------------------------------------------
 # Final Calibration
 # ---------------------------------------------------------------------
-def residual_vector(x, target, losses, decomp='1212'):
+def residual_vector(x, target, losses, mmi_imbalance, decomp='1212'):
     """
     Real residual vector for calibration.
 
@@ -367,7 +366,7 @@ def residual_vector(x, target, losses, decomp='1212'):
     This tells whether the lossy device implements the right unitary shape
     up to an overall attenuation.
     """
-    M = build_u4_row_mesh(x, losses, decomp=decomp)
+    M = build_u4_row_mesh(x, losses, mmi_imbalance, decomp=decomp)
     
     
     c = best_scalar(M, target)
@@ -376,7 +375,7 @@ def residual_vector(x, target, losses, decomp='1212'):
     return np.concatenate([R.real.reshape(-1), R.imag.reshape(-1)])
 
 
-def optimise(target, losses, decomp='1212', max_nfev=5000):
+def optimise(target, losses, mmi_imbalance, decomp='1212', max_nfev=5000):
     """
     Tune MZI parameters so that the lossy mesh approximates the target.
     """
@@ -395,7 +394,9 @@ def optimise(target, losses, decomp='1212', max_nfev=5000):
     p0 = np.concatenate([p0, np.angle(np.diag(D))])
     
     result = least_squares(
-        lambda p: residual_vector(p, target, losses=losses, decomp=decomp),
+        lambda p: residual_vector(p, target, 
+                                  losses=losses, mmi_imbalance=mmi_imbalance,
+                                    decomp=decomp),
         p0,
         max_nfev=max_nfev,
         xtol=1e-12,
@@ -403,7 +404,9 @@ def optimise(target, losses, decomp='1212', max_nfev=5000):
         gtol=1e-12,
     )
     
-    M_opt = build_u4_row_mesh(result.x, losses=losses, decomp=decomp)
+    M_opt = build_u4_row_mesh(result.x, 
+                              losses=losses, mmi_imbalance=mmi_imbalance,
+                                decomp=decomp)
     
     return {
         "p_opt": result.x,
@@ -467,8 +470,24 @@ def loss_names(decomp):
         ]
     return names
 
+def mmi_imbalance_names(decomp):
 
-def sensitivity(target, p, losses, decomp, step_p=1e-6, step_eta=1e-5):
+    if decomp == '2121':
+        CELL_NAMES = ["Ta12", "Ta34", "Ta23", "Tb12", "Tb34", "Tb23"]
+    elif decomp == '1212':
+        CELL_NAMES = ["Ga23", "Ga12", "Ga34", "Gb23", "Gb12", "Gb34"]
+    else:
+        raise ValueError("Decomposition entered not feasible.")
+    
+    names = []
+    for name in CELL_NAMES:
+        names += [
+            f"{name}.xi_out",
+            f"{name}.xi_in"
+        ]
+    return names
+
+def sensitivity(target, p, losses, mmi_imbalance, decomp, step_p=1e-6, step_eta=1e-5, step_xi=1e-5):
     """
     First-order sensitivity of the residual to parameters and losses.
 
@@ -476,28 +495,36 @@ def sensitivity(target, p, losses, decomp, step_p=1e-6, step_eta=1e-5):
 
         J_p    = d residual / d MZI-parameter
         J_eta  = d residual / d amplitude transmissivity
-
+        J_xi   = d residual / d mmi imbalance
     The residual is M - c target, so global attenuation is ignored.
     """
     losses = np.asarray(losses, dtype=float)
 
     def f_p(xx):
-        return residual_vector(xx, target, losses, decomp)
+        return residual_vector(xx, target, losses, mmi_imbalance, decomp)
 
     def f_eta(eta_flat):
         eta = np.clip(eta_flat.reshape(6, 4), 1e-12, 1.0)
-        return residual_vector(p, target, losses, decomp)
+        return residual_vector(p, target, eta, mmi_imbalance, decomp)
+
+    def f_xi(xi_flat):
+        xi = np.clip(xi_flat.reshape(6, 2), 1e-12, 1.0)
+        return residual_vector(p, target, losses, xi, decomp)
+
 
     J_p = finite_difference_jacobian(f_p, p, step=step_p)
     J_eta = finite_difference_jacobian(f_eta, losses.reshape(-1), step=step_eta)
+    J_xi = finite_difference_jacobian(f_xi, mmi_imbalance.reshape(-1), step=step_xi)
 
     param_norms = np.linalg.norm(J_p, axis=0)
     loss_norms = np.linalg.norm(J_eta, axis=0)
+    mmi_imbalance_norms = np.linalg.norm(J_xi, axis=0)
     svals = np.linalg.svd(J_p, compute_uv=False)
 
     return {
         "J_parameters": J_p,
         "J_losses": J_eta,
+        "J_mmi_imbalance" : J_xi,
         "parameter_singular_values": svals,
         "parameter_condition_number": svals[0] / svals[-1] if svals[-1] > 1e-14 else np.inf,
         "ranked_parameters": sorted(
@@ -508,4 +535,8 @@ def sensitivity(target, p, losses, decomp, step_p=1e-6, step_eta=1e-5):
                         zip(loss_names(decomp), loss_norms),
                         key=lambda x: x[1], reverse=True
                     ),
+        "ranked_losses": sorted(
+                            zip(mmi_imbalance_names(decomp), mmi_imbalance_norms),
+                            key=lambda x: x[1], reverse=True
+                        )
     }

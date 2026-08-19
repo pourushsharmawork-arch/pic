@@ -251,7 +251,7 @@ def main():
 
     pred_params0 = torch.cat([th0[0], ph0[0]] + ([de0[0]] if regime.predict_delta else [])).detach().cpu().numpy()
     pred_params = torch.cat([th[0], ph[0]] + ([de[0]] if regime.predict_delta else [])).detach().cpu().numpy()
-
+    sin_thetas = np.concatenate([np.sin(th[0]), np.cos(th[0])])
     print("[inference]")
     print(f"  regime                  : observation={regime.observation}  eta={regime.eta}  "
           f"basis_only={regime.basis_only}  quadrature={regime.quadrature}  obs_dim={regime.obs_dim}")
@@ -271,6 +271,7 @@ def main():
 
     _format_vec("theta", pred_params[:6])
     _format_vec("phi", pred_params[6:12])
+    _format_vec("cos, sin theta", sin_thetas)
     if regime.predict_delta:
         _format_vec("delta", pred_params[12:16])
     else:

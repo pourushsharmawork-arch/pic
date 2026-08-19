@@ -1,7 +1,7 @@
 from typing import Any
 import numpy as np
 
-from qfsim.one_two_decomposition import (_as_dense_matrix, _unitarity_error, _ELIMINATION_PLAN, _make_block,
+from qfsim.one_two_hardware_decomposition import (_as_dense_matrix, _unitarity_error, _ELIMINATION_PLAN, _make_block,
                                          zero_first_params, _nominal_target_residual, _free_rotation_candidates, zero_second_params,
                                          _numerical_fallback, decomposition_diagnostics, _blocks_from_eliminators, _diagonalized_remainder,
                                          _parameters_from_blocks_and_D) 

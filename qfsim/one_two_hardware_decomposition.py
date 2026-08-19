@@ -1,8 +1,9 @@
 """
-one_two_decomposition.py
-=====================
+one_two_hardware_decomposition.py
+=================================
 
-Robust decomposition of an arbitrary numerical 4 x 4 unitary into
+Robust decomposition of an arbitrary numerical 4 x 4 unitary into the
+physical 1-2-1-2 MZI architecture
 
     U = Ga23 @ Ga12 @ Ga34 @ Gb23 @ Gb12 @ Gb34 @ D,
 
@@ -11,19 +12,51 @@ equivalently
 
     U = Ga23 @ (Ga12 direct_sum Ga34) @ Gb23 @ (Gb12 direct_sum Gb34) @ D.
 
-    
-The file is called "sin2_decomposition" because the architecture looks like a     
 The mode pairs are
 
     Ga23, Gb23 : (2, 3)
     Ga12, Gb12 : (1, 2)
     Ga34, Gb34 : (3, 4).
 
-Each G is an embedded two-parameter MZI/Givens cell
+The historical G labels are retained for API compatibility; every returned G
+matrix is the physical H matrix defined below.
 
-    T(theta, phi)
-      = [[exp(-i phi) cos(theta), -sin(theta)],
-         [sin(theta),             exp(i phi) cos(theta)]].
+The code assumes row-vector propagation,
+
+    field_out = field_in @ U.
+
+For two identical balanced beam splitters
+
+    B = (1/sqrt(2)) [[1, i], [i, 1]],
+
+and an upper-arm phase shifter
+
+    P(alpha) = diag(exp(i alpha), 1),
+
+the physical left-to-right sequence
+
+    P(phi) -> B -> P(theta) -> B
+
+is represented by the exact row-vector transfer matrix
+
+    H(theta, phi) = P(phi) @ B @ P(theta) @ B
+
+                  = i exp(i theta/2)
+                    [[exp(i phi) sin(theta/2),
+                      exp(i phi) cos(theta/2)],
+                     [cos(theta/2), -sin(theta/2)]].
+
+The factor i exp(i theta/2) is retained.  It is common only within the two-mode
+cell and becomes a relative phase when the cell is embedded in four modes.
+
+The elimination is performed internally with the original SU(2) Givens
+coordinates and is then compiled exactly into physical H cells while commuting
+the induced diagonal phases to D.  Consequently, the returned ``theta`` and
+``phi`` values are directly programmable hardware phase shifts, and
+
+    U = H1 @ H2 @ ... @ H6 @ D
+
+holds as a complex-matrix identity, not merely at the level of output powers.
 
 
 The program uses right-sided column elimination, converts the eliminators into the mirrored physical order,
@@ -106,6 +139,40 @@ def _unitarity_error(U: np.ndarray) -> float:
             np.linalg.norm(U @ U.conj().T - identity, ord="fro"),
         )
     )
+
+
+def hardware_mzi_local(theta: float, phi: float) -> np.ndarray:
+    """
+    Return the exact 2 x 2 transfer matrix of the laboratory MZI.
+
+    The input is a row vector and therefore encounters the factors from left
+    to right:
+
+        H(theta, phi) = P(phi) @ B @ P(theta) @ B,
+
+    with ``B = [[1, i], [i, 1]] / sqrt(2)`` and
+    ``P(alpha) = diag(exp(i alpha), 1)``.
+
+    No two-mode global phase is removed.
+    """
+    half_theta = 0.5 * float(theta)
+    phi = float(phi)
+    s = np.sin(half_theta)
+    c = np.cos(half_theta)
+    prefactor = 1j * np.exp(1j * half_theta)
+
+    return prefactor * np.array(
+        [
+            [np.exp(1j * phi) * s, np.exp(1j * phi) * c],
+            [c, -s],
+        ],
+        dtype=complex,
+    )
+
+
+def _wrap_hardware_theta(theta: float) -> float:
+    """Wrap a physical internal phase to [0, 2*pi)."""
+    return float(np.mod(theta, 2.0 * np.pi))
 
 
 
@@ -226,6 +293,85 @@ def _make_block(
     return block
 
 
+def _compile_givens_chain_to_hardware(
+    givens_blocks: list[dict[str, Any]],
+    D_givens: np.ndarray,
+) -> tuple[list[dict[str, Any]], np.ndarray, np.ndarray]:
+    """
+    Compile an SU(2)-Givens chain into exact row-vector hardware MZIs.
+
+    Suppose the current diagonal gauge on the two active modes is
+
+        A = diag(exp(i a), exp(i b)),
+
+    and the mathematical block is
+
+        T(t, p) = [[exp(-i p) cos(t), -sin(t)],
+                   [sin(t), exp(i p) cos(t)]].
+
+    The exact local identity used here is
+
+        A @ T(t, p) = H(Theta, Phi) @ A_new,
+
+    where
+
+        Theta = pi - 2 t,
+        Phi   = a - b - p,
+        a_new = b + t - pi,
+        b_new = b + p + t.
+
+    Applying this identity successively pushes every induced phase to the
+    final diagonal matrix.  It is valid for arbitrary real parameters; phase
+    wrapping does not change the represented matrices.
+    """
+    D_givens = np.asarray(D_givens, dtype=complex)
+
+    if D_givens.shape != (4, 4):
+        raise ValueError("D_givens must be a 4 x 4 matrix.")
+
+    gauge = np.zeros(4, dtype=float)
+    hardware_blocks: list[dict[str, Any]] = []
+
+    for block in givens_blocks:
+        i = int(block["modes"][0]) - 1
+        j = int(block["modes"][1]) - 1
+        t = float(block["theta"])
+        p = float(block["phi"])
+        a = float(gauge[i])
+        b = float(gauge[j])
+
+        theta_hardware = _wrap_hardware_theta(np.pi - 2.0 * t)
+        phi_hardware = wrap_phase(a - b - p)
+
+        H_full = misc.embed_T(
+            4,
+            i,
+            j,
+            hardware_mzi_local(theta_hardware, phi_hardware),
+        )
+
+        hardware_blocks.append(
+            {
+                "label": str(block["label"]),
+                "modes": (i + 1, j + 1),
+                "theta": theta_hardware,
+                "phi": phi_hardware,
+                "T_full": H_full,
+                "givens_theta": t,
+                "givens_phi": wrap_phase(p),
+            }
+        )
+
+        # Both assignments must use the old value b.
+        gauge[i] = wrap_phase(b + t - np.pi)
+        gauge[j] = wrap_phase(b + p + t)
+
+    D_gauge = np.diag(np.exp(1j * gauge))
+    D_hardware = D_gauge @ D_givens
+
+    return hardware_blocks, D_hardware, gauge
+
+
 def reconstruct_from_mirrored(
     blocks: list[dict[str, Any]],
     D: np.ndarray,
@@ -235,7 +381,8 @@ def reconstruct_from_mirrored(
 
         U = Ga23 Ga12 Ga34 Gb23 Gb12 Gb34 D
 
-    from blocks in physical order.  Because Ga12/Ga34 and Gb12/Gb34 act on disjoint
+    from hardware blocks in physical order.  Because Ga12/Ga34 and Gb12/Gb34
+    act on disjoint
     modes, this is the same as the two direct-sum layers.
     """
     D = np.asarray(D, dtype=complex)
@@ -258,7 +405,7 @@ def _diagonalized_remainder(
     U: np.ndarray,
     blocks: list[dict[str, Any]],
 ) -> np.ndarray:
-    """Return Gb34^dagger ... Ga23^dagger U for blocks in physical order."""
+    """Return H6^dagger ... H1^dagger U for blocks in physical order."""
     W = np.asarray(U, dtype=complex).copy()
 
     for block in blocks:
@@ -631,7 +778,7 @@ def decompose_U4_rectangular(
     return_diagnostics: bool = False,
 ):
     """
-    Decompose an arbitrary numerical 4 x 4 unitary as
+    Decompose an arbitrary numerical 4 x 4 unitary into physical MZIs as
 
         U = Ga23 Ga12 Ga34 Gb23 Gb12 Gb34 D
           = Ga23 (Ga12 direct_sum Ga34) Gb23 (Gb12 direct_sum Gb34) D.
@@ -664,14 +811,17 @@ def decompose_U4_rectangular(
     Returns
     -------
     blocks:
-        Six dictionaries containing labels, one-indexed modes, theta, phi, and
-        the embedded 4 x 4 cell, in physical order Ga23 through Gb34.
+        Six dictionaries containing labels, one-indexed modes, the directly
+        programmable hardware phases ``theta`` and ``phi``, and the embedded
+        exact 4 x 4 hardware cell.  ``givens_theta`` and ``givens_phi`` retain
+        the intermediate mathematical coordinates for traceability.
 
     D:
-        The final diagonal phase matrix.
+        The final diagonal phase matrix after all compiler-induced phases have
+        been absorbed into it.
 
     W:
-        The matrix ``Gb34^dagger ... Ga23^dagger U``.  A successful decomposition
+        The matrix ``H6^dagger ... H1^dagger U``.  A successful decomposition
         has W approximately equal to D.
 
     diagnostics:
@@ -836,6 +986,11 @@ def decompose_U4_rectangular(
 
         used_numerical_fallback = True
 
+    # Compile the mathematical SU(2) Givens cells into exact laboratory MZIs.
+    # The returned block theta/phi values are physical phase-shifter settings.
+    blocks, D, compiler_gauge = _compile_givens_chain_to_hardware(blocks, D)
+    W = _diagonalized_remainder(U, blocks)
+
     diagnostics = decomposition_diagnostics(U, blocks, D, W)
     reconstruction_error = diagnostics["reconstruction_error"]
 
@@ -853,6 +1008,7 @@ def decompose_U4_rectangular(
             "nodes_visited": nodes_visited,
             "used_numerical_fallback": used_numerical_fallback,
             "fallback_residual": float(fallback_residual),
+            "compiler_output_phase_gauge": compiler_gauge.copy(),
         }
     )
 
